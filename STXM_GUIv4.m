@@ -1,4 +1,4 @@
-function STXM_GUIv3
+function STXM_GUIv4
 
 %initial gui stuff
 %
@@ -950,10 +950,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         Datasetnames = fieldnames(Dataset);
         
-        
-        
-        
-        
+       
         set(hplottitle,'String',(Datasetnames{1}))
         set(hpanelmultiple,'Visible','on');
 
