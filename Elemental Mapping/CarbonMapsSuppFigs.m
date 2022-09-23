@@ -481,30 +481,15 @@ end
 xdat=[0:XSiz:Snew.Xvalue];
 ydat=[0:YSiz:Snew.Yvalue];
 
-%%% Combined Masks
-% % % % % if nofig==0
-% % % % %    subplot(2,2,4),
-% % % % %     image(xdat,ydat,uint8(RgbMat))
-% % % % %     title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
-% % % % %     axis image
-% % % % %     xlabel('X (\mum)');
-% % % % %     ylabel('Y (\mum)');
-% % % % %     if figsav==1
-% % % % %         filename=sprintf('%s%s%s%s',rootdir,sample,Snew.particle,'_Maps');
-% % % % %         saveas(gcf,filename,'png');
-% % % % %     end
-% % % % % end
 xysiz=size(carb);
 Snew.Maps=zeros(xysiz(1),xysiz(2),3);
 Snew.Maps(:,:,1)=carb;
-Snew.errcarb = errcarb;
 Snew.Maps(:,:,2)=prepost;
-Snew.errprepost = errprepost;
 Snew.Maps(:,:,3)=sp2;
+
+Snew.errcarb = errcarb;
+Snew.errprepost = errprepost;
 Snew.errsp2 = errsp2;
-% if figsav==1
-% filename=sprintf('%s%s%s%s',rootdir,sample,particle,'_f2_thresh');
-% saveas(gcf,filename,'png');
-% end
+
 Snew.BinCompMap=temp;
 
