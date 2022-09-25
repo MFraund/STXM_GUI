@@ -611,12 +611,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 
 
-%% Programming Callbacks
+%% ================== Programming Callbacks =======================
 %======================================================================
 
 %hload callback
     function hload_callback(~,~)
-        filedirs = uipickfiles; %calls up gui to pick multiple directories
+%         filedirs = uipickfiles; %calls up gui to pick multiple directories
+		filedirs = pickFileDirs(filedirs);
         %global numdirs
         numdirs = length(filedirs);
         folders = cell(1,numdirs); %preallocating folders cell array
@@ -641,7 +642,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             tempfilenames = ls; %listing out file names
             cnt = 0;
             for j = 1:size(tempfilenames,1) %looping through each file name and counting .hdr files
-                if any(strfind(tempfilenames(j,:),'.hdr'))==1
+                if any(strfind(tempfilenames(j,:),'.hdr'))
                     cnt = cnt + 1;
                     if cnt == 2
                         dirtype{i} = 'map  '; %if 2 or more .hdr files are in one dir, it's a map
@@ -664,15 +665,22 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %hremove button moves data from "ready list" to "load list" This is EXACTLY
 %the same as hadd with the listbox 'String' and 'Values' switched
     function hremove_callback(~,~)
-        readylistvalue = get(hlistready,'Value');
+        % Getting chosen value
+		readylistvalue = get(hlistready,'Value');
         readyliststring = get(hlistready,'String');
+		
+		% Removing chosen value
         readyliststring(readylistvalue) = [];
+		filedirs(readylistvalue) = [];
+		
+		% Setting new string and ensuring a non-existent value isn't selected
         set(hlistready,'String',readyliststring,'Value',1);
         
-        if isempty(readyliststring)
-            set(hremove,'Enable','off');
-            set(hanalyze,'Enable','off');
-        end
+		% Turning off buttons if needed
+		if isempty(readyliststring)
+			set(hremove,'Enable','off');
+			set(hanalyze,'Enable','off');
+		end
         
     end
 
@@ -2567,6 +2575,34 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	function hmultidistfxn_callback(~,~)
 		
 		
+		
+	end
+
+%% Picking files but ensuring no duplicates
+	function filedirs = pickFileDirs(filedirs)
+		
+		if nargin == 0
+			filedirs = [];
+		end
+		
+		newfiledirs = uipickfiles();
+		
+		lnfdirs = length(newfiledirs);
+		lofdirs = length(filedirs);
+		remove_list = [];
+		for n = 1:lnfdirs
+			for o = 1:lofdirs
+				if strcmp(newfiledirs{n},filedirs{o})
+					remove_list = [remove_list, n];
+				end
+			end
+		end
+		newfiledirs(remove_list) = [];
+		filedirs = [filedirs, newfiledirs];
+		
+	end
+
+	function UI_Cleaner()
 		
 	end
 
