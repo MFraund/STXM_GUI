@@ -2016,14 +2016,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         S = Dataset.(Datasetnames{readyval}).S;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;       
         currthreshval = Dataset.(Datasetnames{readyval}).threshlevel;
-        Snew = OdStack(S,'O',0,'yes',currthreshval); %Allows manual selection of Io region
+        Snew = OdStack(S,'adaptive',0,'yes',currthreshval); %Allows manual selection of Io region
         Snew = energytest(Snew);
 %         Snew = makinbinmap(Snew);
         
         
         if Snew.elements.C == 1
             
-            if Dataset.(Datasetnames{readyval}).binadjtest == 1;
+            if Dataset.(Datasetnames{readyval}).binadjtest == 1
                 Snew = CarbonMapsSuppFigs(Snew,0.35,1,1,'given',Snew.binmap);
             else
                 Snew=CarbonMapsSuppFigs(Snew,0.35);
@@ -2161,7 +2161,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         function hthreshslide_callback(~,~)
             currthreshval = get(hthreshslide,'Value');
             set(hthreshtext,'String',num2str(currthreshval));
-            Snew = OdStack(S,'O',0,'no',currthreshval);
+            Snew = OdStack(S,'adaptive',0,'no',currthreshval);
             
             plotimshowpair();
         end
@@ -2170,7 +2170,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currthreshval = 2;
             set(hthreshslide,'Value',currthreshval);
             set(hthreshtext,'String',num2str(currthreshval));
-            Snew = OdStack(S,'O',0,'no',currthreshval);
+            Snew = OdStack(S,'adaptive',0,'no',currthreshval);
             
             plotimshowpair();
         end
@@ -2182,10 +2182,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
-            if strcmp(manualIorecheck,'no') == 1;
-                Snew = OdStack(S,'O',0,'no',currthreshval);
+            if strcmp(manualIorecheck,'no') == 1
+                Snew = OdStack(S,'adaptive',0,'no',currthreshval);
             else
-                Snew = OdStack(S,'O',0,'yes',currthreshval); %Allows manual selection of Io region
+                Snew = OdStack(S,'adaptive',0,'yes',currthreshval); %Allows manual selection of Io region
             end
             
             
