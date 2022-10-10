@@ -2589,7 +2589,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			filedirs = [];
 		end
 		
-		newfiledirs = uipickfiles();
+		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr');
 		
 		if ~iscell(newfiledirs) % If user presses cancel button
 			return;
