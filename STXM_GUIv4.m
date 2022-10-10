@@ -620,7 +620,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %         filedirs = uipickfiles; %calls up gui to pick multiple directories
 		filedirs = pickFileDirs(filedirs);
 		if isempty(filedirs)
-			print('Pick more files');
+			disp('Pick more files');
 		end
         %global numdirs
         numdirs = length(filedirs);
