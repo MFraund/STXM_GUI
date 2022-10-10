@@ -615,10 +615,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %% ================== Programming Callbacks =======================
 %======================================================================
 
-%hload callback
+%% hload callback
     function hload_callback(~,~)
 %         filedirs = uipickfiles; %calls up gui to pick multiple directories
 		filedirs = pickFileDirs(filedirs);
+		if isempty(filedirs)
+			print('Pick more files');
+		end
         %global numdirs
         numdirs = length(filedirs);
         folders = cell(1,numdirs); %preallocating folders cell array
@@ -2588,7 +2591,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 		newfiledirs = uipickfiles();
 		
-		if newfiledirs == 0 % If user presses cancel button
+		if ~iscell(newfiledirs) % If user presses cancel button
 			return;
 		end
 		
