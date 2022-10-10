@@ -2588,6 +2588,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 		newfiledirs = uipickfiles();
 		
+		if newfiledirs == 0 % If user presses cancel button
+			return;
+		end
+		
 		lnfdirs = length(newfiledirs);
 		lofdirs = length(filedirs);
 		remove_list = [];
