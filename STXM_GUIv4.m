@@ -2019,7 +2019,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         S = Dataset.(Datasetnames{readyval}).S;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;       
         currthreshval = Dataset.(Datasetnames{readyval}).threshlevel;
-        Snew = OdStack(S,'adaptive','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
+        Snew = OdStack(S,'adaptive','manualiocheck','yes','Auto Gamma', 'no','imadjust_gamma',currthreshval); %Allows manual selection of Io region
         Snew = energytest(Snew);
 %         Snew = makinbinmap(Snew);
         
@@ -2162,7 +2162,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         function hthreshslide_callback(~,~)
             currthreshval = get(hthreshslide,'Value');
             set(hthreshtext,'String',num2str(currthreshval));
-            Snew = OdStack(S,'adaptive','imadjust_gamma',currthreshval);
+            Snew = OdStack(S,'adaptive','Auto Gamma', 'no','imadjust_gamma',currthreshval);
             
             plotimshowpair();
         end
@@ -2171,7 +2171,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currthreshval = 2;
             set(hthreshslide,'Value',currthreshval);
             set(hthreshtext,'String',num2str(currthreshval));
-            Snew = OdStack(S,'adaptive','imadjust_gamma',currthreshval);
+            Snew = OdStack(S,'adaptive','Auto Gamma', 'no', 'imadjust_gamma',currthreshval);
             
             plotimshowpair();
         end
@@ -2184,9 +2184,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
             if strcmp(manualIorecheck,'no') == 1
-                Snew = OdStack(S,'adaptive','imadjust_gamma',currthreshval);
+                Snew = OdStack(S,'adaptive','Auto Gamma', 'no','imadjust_gamma',currthreshval);
             else
-                Snew = OdStack(S,'adaptive','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
+                Snew = OdStack(S,'adaptive','Auto Gamma', 'no','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
             end
             
             

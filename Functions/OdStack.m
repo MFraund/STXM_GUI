@@ -1,4 +1,3 @@
-
 function S=OdStack(structin, method, varargin)
 %function S=OdStack(structin, method, plotflag,     manualiocheck,         imgadjust_gamma)
 %                   struct    'O'      0 or 1     'no' or 'yes'   default = 2
@@ -70,8 +69,8 @@ if strcmp(method,'C')==1
     imagebuffer=mean(stack,3);
     imagebuffer=medfilt2(imagebuffer); % median filtering of the stack mean
     GrayImage=mat2gray(imagebuffer); % Turn into a greyscale with vals [0 1]
-    Mask=zeros(size(GrayImage));
-    Mask(GrayImage>=0.85)=1; % Detect particle free image regions
+    mask=zeros(size(GrayImage));
+    mask(GrayImage>=0.85)=1; % Detect particle free image regions
     
     % particle masking & thresholding using Otsu's method
 elseif strcmp(method,'O')==1
@@ -85,7 +84,7 @@ elseif strcmp(method,'O')==1
     %     GrayImage=imadjust(GrayImage,[0 1],[0 1],2); %%Contrast of 2 for maps
     
     Thresh=graythresh(GrayImage); %% Otsu thresholding
-    Mask=im2bw(GrayImage,Thresh); %% Give binary image
+    mask=im2bw(GrayImage,Thresh); %% Give binary image
     
     % Thresholding for maps -- doesnt need as much contrast adjustment
 elseif strcmp(method,'map')==1
@@ -95,7 +94,7 @@ elseif strcmp(method,'map')==1
     GrayImage=imadjust(GrayImage,[0 1],[0 1],2); %%Contrast of 2 for maps
     
     Thresh=graythresh(GrayImage); %% Otsu thresholding
-    Mask=im2bw(GrayImage,Thresh); %% Give binary image
+    mask=im2bw(GrayImage,Thresh); %% Give binary image
     
 elseif strcmp(method,'adaptive') == 1
 	imagebuffer=mean(stack,3);  %% Use average of all images in stack
@@ -109,11 +108,11 @@ elseif strcmp(method,'adaptive') == 1
 	grayim = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
 	
     T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
-	Mask = imbinarize(grayim,T_ad);
+	mask = imbinarize(grayim,T_ad);
     
-	Mask = bwareaopen(Mask, 8);
+	mask = bwareaopen(mask, 8);
 	
-	Mask = ~Mask;
+	mask = ~mask;
 	
 else % Thresholding method not defined
     
@@ -121,7 +120,7 @@ else % Thresholding method not defined
     return
     
 end
- S.mask=Mask;
+ S.mask=mask;
 % Izero extraction
 
 %%%%% this section replaced with an optional input
@@ -181,9 +180,9 @@ else
     for cnt=1:eVlength
         
         buffer=stack(:,:,cnt);
-        Izero(cnt,2)=mean(buffer(Mask==1));
-        stdIzero(cnt,2) = std(buffer(Mask==1));
-        numIzero = sum(sum(Mask));
+        Izero(cnt,2)=mean(buffer(mask==1));
+        stdIzero(cnt,2) = std(buffer(mask==1));
+        numIzero = sum(sum(mask));
         errIzero(cnt,2) = 1.96 .* stdIzero(cnt,2) ./ sqrt(numIzero); %1.96 comes from t-distribution with an alpha level of 0.05
         clear buffer
         
@@ -228,7 +227,7 @@ if plotflag==1
     
     
     subplot(2,2,3)
-    imagesc(xAxislabel,yAxislabel,Mask)
+    imagesc(xAxislabel,yAxislabel,mask)
     colorbar
     axis image
     title('Izero Region Mask')
