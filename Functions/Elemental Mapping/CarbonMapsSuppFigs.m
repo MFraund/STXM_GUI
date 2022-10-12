@@ -46,14 +46,12 @@ subdim=ceil(sqrt(length(energy)));
 %     manualbinmapcheck = 'no';
 % end
 
-
+test=energy(energy<319 & energy>277);
 if length(Snew.eVenergy)<2
     beep
     disp('too few images for this mapping routine');
     return
-end
-test=energy(energy<319 & energy>277);
-if isempty(test)
+elseif isempty(test)
     beep
     disp('this is not the carbon edge')
     return

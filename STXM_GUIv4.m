@@ -71,7 +71,6 @@ husesaved = uicontrol(...
     'Style','checkbox',...
     'String','Use Saved Analyses',...
     'Units','normalized',...
-    'Tag','Load',...
     'Value',1,...
     'Position',[0.12,0.97,0.15,0.02],...
     'Callback',{@husesaved_callback});
@@ -80,14 +79,12 @@ htextcheck = uicontrol(...
 	'Style','text',...
 	'String',[],...
 	'Units','normalized',...
-	'Tag','Load',...
 	'Position',[0.20,0.965,0.2,0.02]);
 
 hqcsaved = uicontrol(...
     'Style','checkbox',...
     'String','Use Saved QC Params',...
     'Units','normalized',...
-    'Tag','Load',...
     'Value',0,...
     'Enable','off',...
     'Position',[0.12,0.95,0.15,0.02],...
@@ -97,7 +94,6 @@ hload = uicontrol(...
     'Style','pushbutton',...
     'String','Load STXM Data',...
     'Units','normalized',...
-    'Tag','Load',...
     'Position',[0.01,0.88,0.1,0.053],...
     'Callback',{@hload_callback});
 
@@ -106,7 +102,6 @@ hanalyze = uicontrol(...
     'String','Analyze All',...
     'Units','normalized',...
     'Enable','off',...
-    'Tag','Load',...
     'Position',[0.21,0.88,0.1,0.053],...
     'Callback',{@hanalyze_callback});
 
@@ -620,7 +615,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %         filedirs = uipickfiles; %calls up gui to pick multiple directories
 		filedirs = pickFileDirs(filedirs);
 		if isempty(filedirs)
-			disp('Pick more files');
+			disp('Must pick some files');
 		end
         %global numdirs
         numdirs = length(filedirs);
@@ -658,7 +653,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 dirtype{i} = 'stack'; %if only 1 .hdr file is present, it is a stack
             end
             displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
-        end
+			if isempty(displaydirs{i})
+				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
+			end
+		end
+		
         set(hlistready,'String',displaydirs);
         set(hanalyze,'Enable','on');
         set(hremove,'Enable','on');
@@ -2020,7 +2019,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         S = Dataset.(Datasetnames{readyval}).S;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;       
         currthreshval = Dataset.(Datasetnames{readyval}).threshlevel;
-        Snew = OdStack(S,'adaptive',0,'yes',currthreshval); %Allows manual selection of Io region
+        Snew = OdStack(S,'adaptive','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
         Snew = energytest(Snew);
 %         Snew = makinbinmap(Snew);
         
@@ -2090,9 +2089,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             Snew = CNOeleMaps(Snew);
         end
 
-        
         mapstest = 1;
-
         save(['../F',S.particle],'Snew','S','Mixing','Particles','datafolder','mapstest');
         
         hanalyze_callback();
@@ -2165,7 +2162,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         function hthreshslide_callback(~,~)
             currthreshval = get(hthreshslide,'Value');
             set(hthreshtext,'String',num2str(currthreshval));
-            Snew = OdStack(S,'adaptive',0,'no',currthreshval);
+            Snew = OdStack(S,'adaptive','imadjust_gamma',currthreshval);
             
             plotimshowpair();
         end
@@ -2174,7 +2171,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currthreshval = 2;
             set(hthreshslide,'Value',currthreshval);
             set(hthreshtext,'String',num2str(currthreshval));
-            Snew = OdStack(S,'adaptive',0,'no',currthreshval);
+            Snew = OdStack(S,'adaptive','imadjust_gamma',currthreshval);
             
             plotimshowpair();
         end
@@ -2187,9 +2184,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
             if strcmp(manualIorecheck,'no') == 1
-                Snew = OdStack(S,'adaptive',0,'no',currthreshval);
+                Snew = OdStack(S,'adaptive','imadjust_gamma',currthreshval);
             else
-                Snew = OdStack(S,'adaptive',0,'yes',currthreshval); %Allows manual selection of Io region
+                Snew = OdStack(S,'adaptive','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
             end
             
             
@@ -2575,7 +2572,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		hanalyze_callback();
 	end
 
-%% Control Multiple FOV Data Display
+%% Control Multiple FOV Data Display ????????
 	function hmultidistfxn_callback(~,~)
 		
 		
@@ -2610,6 +2607,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 	end
 
+%% UI Cleaner ????????
 	function UI_Cleaner()
 		
 	end

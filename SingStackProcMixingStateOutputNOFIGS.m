@@ -77,9 +77,11 @@ S = AlignStack(S);
 
 %% OdStack
 if length(S.eVenergy)<3
-	Snew=OdStack(S,'map',0,'no',threshlevel);
+% 	Snew=OdStack(S,'map',0,'no',threshlevel);
+	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', threshlevel);
 else
-	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
+% 	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
+	Snew=OdStack(S,'adaptive', 'Auto Gamma','yes', 'imadjust_gamma', threshlevel);
 end
 
 %% Elemental Maps (CarbonMaps)
