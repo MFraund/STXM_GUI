@@ -30,6 +30,7 @@ function [ Dataset ] = MixingStatesforGUI( filedirs, threshlevel, binadjtest, gi
 
 [varargin,inorganic] = ExtractVararginValue(varargin,'inorganic','NaCl');
 [varargin,organic] = ExtractVararginValue(varargin,'organic','sucrose');
+[varargin,threshMethod] = ExtractVararginValue(varargin,'Threshold Method','adaptive');
 
 if exist('threshlevel','var') == 0
     threshlevel = 2;
@@ -97,8 +98,8 @@ for i = 1:ldirs %looping through each selected directory
 %             cnt = cnt + 1;
 %         end
 % 	end
-
-	[S,Snew,Mixing,Particles] = SingStackProcMixingStateOutputNOFIGS(tempfiledir, threshlevel, binadjtest, givenbinmap,inorganic,organic);
+	disp(threshMethod);
+	[S,Snew,Mixing,Particles] = SingStackProcMixingStateOutputNOFIGS(tempfiledir, threshlevel, binadjtest, givenbinmap,inorganic,organic,'Thresh Method',threshMethod);
 
 	Dataset.(dirnames{i}).S = S;
 	Dataset.(dirnames{i}).Snew = Snew;

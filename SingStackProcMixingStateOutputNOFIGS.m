@@ -21,6 +21,7 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 [varargin,inorganic] = ExtractVararginValue(varargin,'inorganic','NaCl');
 [varargin,organic] = ExtractVararginValue(varargin,'organic','sucrose');
 [varargin,givenStruct] = ExtractVararginValue(varargin,'givenStruct',[]);
+[varargin,threshMethod] = ExtractVararginValue(varargin,'Thresh Method','adaptive');
 
 if ~exist('threshlevel','var')
     threshlevel = 2;
@@ -81,7 +82,8 @@ if length(S.eVenergy)<3
 	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', threshlevel);
 else
 % 	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
-	Snew=OdStack(S,'adaptive', 'Auto Gamma','yes', 'imadjust_gamma', threshlevel);
+	disp(threshMethod);
+	Snew=OdStack(S,threshMethod, 'Auto Gamma','yes', 'imadjust_gamma', threshlevel);
 end
 
 %% Elemental Maps (CarbonMaps)

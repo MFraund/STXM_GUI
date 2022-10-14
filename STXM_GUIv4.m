@@ -52,8 +52,6 @@ hlistready = uicontrol(...
     'Position',[0.01,0.07,0.3,0.8]);
 
 
-
-
 hroutinepopup = uicontrol(...
     'Style','popupmenu',...
     'String',{'Load & Run Data','Data Viewer','StackLab','EDXmapview'},...
@@ -89,6 +87,13 @@ hqcsaved = uicontrol(...
     'Enable','off',...
     'Position',[0.12,0.95,0.15,0.02],...
     'Callback',{@hqcsaved_callback});
+
+hthresholding_dropdown = uicontrol(...
+	'Style','popupmenu',...
+	'Units','normalized',...
+	'Position',[0.20, 0.95, 0.10, 0.02],...
+	'String',{'adaptive','O'},...
+	'Enable','off');
 
 hload = uicontrol(...
     'Style','pushbutton',...
@@ -739,6 +744,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		organiclist = get(hassumedorgpopup,'String');
 		organicval = get(hassumedorgpopup,'Value');
 		organic = organiclist{organicval};
+		threshMethod_str = get(hthresholding_dropdown,'String');
+		threshMethod_val = get(hthresholding_dropdown,'Value');
+		threshMethod = threshMethod_str{threshMethod_val};
+		
         
         for i = 1:lreadydirs
 			if ispc()
@@ -956,7 +965,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		end
         
 		if usesaveflag == 0 && usesavedqcflag == 0
-			[Dataset] = MixingStatesforGUI(dirstorun,2,0,0,inorganic,organic);
+			disp(threshMethod);
+			[Dataset] = MixingStatesforGUI(dirstorun,2,0,0,'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
 		end
         
         Datasetnames = fieldnames(Dataset);
@@ -1995,11 +2005,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         if saveval == 0
             %rawdatacheck = inputdlg('Do you want to re-analyze raw data (yes/no)? Quality control measures may need to be re-done.','Re-run Raw Data?',1,{'yes'});
             set(htextcheck,'String','Re-analyzing raw data, quality control measures may need to be redone');
+			set(hthresholding_dropdown,'Enable','on');
 			set(hqcsaved,'Enable','on','Value',0);
 			
 		else
 			set(htextcheck,'String',[]);
             set(hqcsaved,'Value',0,'Enable','off')
+			set(hthresholding_dropdown,'Enable','off');
             
         end
         

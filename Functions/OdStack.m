@@ -35,6 +35,7 @@ end
 [varargin, manualiocheck] = ExtractVararginValue(varargin, 'manualiocheck', 'no');
 [varargin, imadjust_gamma] = ExtractVararginValue(varargin, 'imadjust_gamma', 2);
 [varargin, autoGammaFlag] = ExtractVararginValue(varargin, 'Auto Gamma', 1);
+[varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
 
 % standard_gamma = 2;
 % 
@@ -105,7 +106,7 @@ elseif strcmp(method,'adaptive') == 1
 	se = strel('disk', 30);
 	topim = imtophat(grayim, se);
 	
-	grayim = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
+	[grayim, imadjust_gamma] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
 	
     T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
 	mask = imbinarize(grayim,T_ad);
@@ -121,6 +122,7 @@ else % Thresholding method not defined
     
 end
  S.mask=mask;
+ S.gamma = imadjust_gamma;
 % Izero extraction
 
 %%%%% this section replaced with an optional input
