@@ -1,4 +1,4 @@
-function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(datafolder, threshlevel, binadjtest, givenbinmap, varargin)
+function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(datafolder, varargin)
 
 %[S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(datafolder, threshlevel, binadjtest, givenbinmap,varargin)
 
@@ -22,18 +22,11 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 [varargin,organic] = ExtractVararginValue(varargin,'organic','sucrose');
 [varargin,givenStruct] = ExtractVararginValue(varargin,'givenStruct',[]);
 [varargin,threshMethod] = ExtractVararginValue(varargin,'Thresh Method','adaptive');
+[varargin,gammaLevel] = ExtractVararginValue(varargin,'Gamma Level',2);
+[varargin,binAdjTest] = ExtractVararginValue(varargin,'Bin Adjust Flag',0);
+[varargin,givenBinMap] = ExtractVararginValue(varargin,'Bin Map',0);
 
-if ~exist('threshlevel','var')
-    threshlevel = 2;
-end
 
-if ~exist('binadjtest','var')
-    binadjtest = 0;
-end
-
-if ~exist('givenbinmap','var')
-    givenbinmap = 0;
-end
 
 %% Loading Stack Info
 cd(datafolder) %% move to raw data folder
@@ -79,11 +72,10 @@ S = AlignStack(S);
 %% OdStack
 if length(S.eVenergy)<3
 % 	Snew=OdStack(S,'map',0,'no',threshlevel);
-	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', threshlevel);
+	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
 else
 % 	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
-	disp(threshMethod);
-	Snew=OdStack(S,threshMethod, 'Auto Gamma','yes', 'imadjust_gamma', threshlevel);
+	Snew=OdStack(S,threshMethod, 'Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
 end
 
 %% Elemental Maps (CarbonMaps)
@@ -95,9 +87,9 @@ Snew = makinbinmap(Snew);
 
 if Snew.elements.C == 1
 	
-	if binadjtest == 1
-		Snew = CarbonMapsSuppFigs(Snew,0.35,1,1,'given',givenbinmap);
-		savedbinmap = givenbinmap;
+	if binAdjTest == 1
+		Snew = CarbonMapsSuppFigs(Snew,0.35,1,1,'given',givenBinMap);
+		savedbinmap = givenBinMap;
 	else
 		Snew=CarbonMapsSuppFigs(Snew,0.35);
 	end

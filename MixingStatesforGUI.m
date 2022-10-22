@@ -1,4 +1,4 @@
-function [ Dataset ] = MixingStatesforGUI( filedirs, threshlevel, binadjtest, givenbinmap,varargin)
+function [ Dataset ] = MixingStatesforGUI( filedirs, varargin)
 %MIXINGSTATESFORGUI [ MixingOverview,MixStateStats,ParticlesOverview ] = MixingStatesforGUI( filedirs )
 %Determination of simple statistics about mixing state and mass fractions
 %Code by Matthew Fraund 5/19/15 @ University of the Pacific
@@ -28,23 +28,17 @@ function [ Dataset ] = MixingStatesforGUI( filedirs, threshlevel, binadjtest, gi
 %SingStackProcMixingStateOutputNOFIGS
 %extractingmfrac (file by MWF)
 
+%% Input Checking
 [varargin,inorganic] = ExtractVararginValue(varargin,'inorganic','NaCl');
 [varargin,organic] = ExtractVararginValue(varargin,'organic','sucrose');
-[varargin,threshMethod] = ExtractVararginValue(varargin,'Threshold Method','adaptive');
-
-if exist('threshlevel','var') == 0
-    threshlevel = 2;
-end
-
-if exist('binadjtest','var') == 0
-    binadjtest = 0;
-end
-
-if exist('givenbinmap','var') == 0
-    givenbinmap = 0;
-end
+[varargin,givenStruct] = ExtractVararginValue(varargin,'givenStruct',[]);
+[varargin,threshMethod] = ExtractVararginValue(varargin,'Thresh Method','adaptive');
+[varargin,gammaLevel] = ExtractVararginValue(varargin,'Gamma Level',2);
+[varargin,binAdjTest] = ExtractVararginValue(varargin,'Bin Adjust Flag',0);
+[varargin,givenBinMap] = ExtractVararginValue(varargin,'Bin Map',0);
 
 
+%% Looping over Directories to pull out folder names
 ldirs = length(filedirs);
 dirnames = cell(ldirs,1);
 emptycell = cell(ldirs,1);
@@ -55,6 +49,7 @@ for i = 1:ldirs
     dirnames{i}(idx) = '_';
 end
 
+%% Preallocating
 Dataset = cell2struct(emptycell,dirnames,1);
 ParticlesOverview = zeros(1,ldirs);
 MixingOverview = zeros(1,ldirs);
@@ -70,6 +65,7 @@ tempDb = zeros(1,length(filedirs));
 tempCHI = zeros(1,length(filedirs));
 
 
+%% Looping over each folder/file to run
 if any(exist('sillystring','file'))
 	hwait = waitbar(0,sillystring);
 else
@@ -83,23 +79,16 @@ for i = 1:ldirs %looping through each selected directory
 		tempfiledir = strcat(filedirs{i},'/'); 
 	end
     cd(filedirs{i}); %moving to each directory
-%     tempfilenames = ls; %listing out file names
-%     cnt = 1;
-% 	hdrcnt = 0;
-%     for j = 1:size(tempfilenames,1) %looping through each file name and picking out .hdr and .xim files ONLY
-%         %(this allows for lots of other crap in the folder) and then building
-%         %the FileNames cell array
-%         if any(strfind(strtrim(tempfilenames(j,:)),'.hdr'))==1
-%             FileNames{1,cnt} = strtrim(tempfilenames(j,:));    %i'm not sure how to preallocate here without another if loop, might not be faster
-%             cnt = cnt + 1;
-%             hdrcnt = hdrcnt +1;
-%         elseif any(strfind(strtrim(tempfilenames(j,:)),'.xim'))==1
-%             FileNames{1,cnt} = strtrim(tempfilenames(j,:));
-%             cnt = cnt + 1;
-%         end
-% 	end
+
 	disp(threshMethod);
-	[S,Snew,Mixing,Particles] = SingStackProcMixingStateOutputNOFIGS(tempfiledir, threshlevel, binadjtest, givenbinmap,inorganic,organic,'Thresh Method',threshMethod);
+	[S,Snew,Mixing,Particles] = SingStackProcMixingStateOutputNOFIGS(tempfiledir,...
+		'Gamma Level', gammaLevel,...
+		'Bin Adjust Flag', binAdjTest,...
+		'Bin Map', givenBinMap,...
+		'inorganic',inorganic,...
+		'organic',organic,...
+		'Thresh Method',threshMethod...
+		);
 
 	Dataset.(dirnames{i}).S = S;
 	Dataset.(dirnames{i}).Snew = Snew;
@@ -121,6 +110,7 @@ for i = 1:ldirs %looping through each selected directory
 %     ParticlesOverview(1,i).Particles = Particles;
 end
 
+%% Compiling mixing state statistics
 if Mixing == 0
 	
 else

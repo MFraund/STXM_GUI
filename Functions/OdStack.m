@@ -81,7 +81,7 @@ elseif strcmp(method,'O')==1
     %imagebuffer = FindingTotGradAngle(imagebuffer); % this removes the linear intensity gradient present in some image backgrounds
     
     GrayImage=mat2gray(imagebuffer); %% Turn into a greyscale with vals [0 1]
-    GrayImage=imadjust(GrayImage,[0 1],[0 1],imgadjust_gamma); %% increase contrast
+    GrayImage=imadjust(GrayImage,[0 1],[0 1],imadjust_gamma); %% increase contrast
     %     GrayImage=imadjust(GrayImage,[0 1],[0 1],2); %%Contrast of 2 for maps
     
     Thresh=graythresh(GrayImage); %% Otsu thresholding

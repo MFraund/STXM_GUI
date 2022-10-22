@@ -947,7 +947,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     usesavedqcflag = 0;
                     break
                 else                                %Updated CarbonMaps has been run on Jth sample
-                    [Dataset] = MixingStatesforGUI(dirstorun(j), threshlevel, binadjtest, savedbinmap);
+                    [Dataset] = MixingStatesforGUI(dirstorun(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);
                     %tempdataset = load(['F',fovname{j}]);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     %[~,tempfov] = fileparts(dirstorun{j});
                     %currfov = ['FOV',tempfov];
@@ -966,7 +966,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
 		if usesaveflag == 0 && usesavedqcflag == 0
 			disp(threshMethod);
-			[Dataset] = MixingStatesforGUI(dirstorun,2,0,0,'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+			[Dataset] = MixingStatesforGUI(dirstorun,'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
 		end
         
         Datasetnames = fieldnames(Dataset);
