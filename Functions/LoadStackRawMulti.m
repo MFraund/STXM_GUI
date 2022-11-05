@@ -30,32 +30,32 @@ FileList = dir;
 lsize = size(FileList,1); %length doesn't work here because the file name may be longer than the number of files
 
 %% Finding Image and Header files
-hdrcnt = 1;
-ximcnt = 1;
+hdrcnt = 0;
+ximcnt = 0;
 for j = 1:lsize
     currentfile = FileList(j).name; %paring off spaces before and after file name
     hdrflag = strfind(currentfile,'.hdr'); %finding .hdr files
 	ximflag = strfind(currentfile,'.xim'); %finding .xim files
 	
 	if ~isempty(hdrflag)
-		hdridx(hdrcnt) = j;
 		hdrcnt = hdrcnt + 1;
+		hdridx(hdrcnt) = j;
 	elseif ~isempty(ximflag)
-		ximidx(ximcnt) = j;
 		ximcnt = ximcnt + 1;
+		ximidx(ximcnt) = j;
 	end
 end
 
 %% Loading Map (more than 1 header) or Stack (only 1 header)
-if length(hdridx) > 1
-	for q = 1:length(ximidx)
+if hdrcnt > 1 %map, more than one header
+	for q = 1:ximcnt
 		[S.eVenergy(q), S.Xvalue, S.Yvalue, multiregion, S.position] = ReadHdrMulti(FileList(hdridx(q)).name);
 		S.spectr(:,:,q) = flipud(load(FileList(ximidx(q)).name));
 	end
 	
-else
+else %stack
 	[S.eVenergy,S.Xvalue,S.Yvalue,multiregion,S.position]=ReadHdrMulti(FileList(hdridx).name); %running modified ReadHdr
-	for q = 1:length(ximidx)
+	for q = 1:ximcnt
 		S.spectr(:,:,q) = flipud(load(FileList(ximidx(q)).name));
 	end
 	
