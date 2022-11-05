@@ -79,8 +79,7 @@ for i = 1:ldirs %looping through each selected directory
 		tempfiledir = strcat(filedirs{i},'/'); 
 	end
     cd(filedirs{i}); %moving to each directory
-
-	disp(threshMethod);
+	
 	[S,Snew,Mixing,Particles] = SingStackProcMixingStateOutputNOFIGS(tempfiledir,...
 		'Gamma Level', gammaLevel,...
 		'Bin Adjust Flag', binAdjTest,...
