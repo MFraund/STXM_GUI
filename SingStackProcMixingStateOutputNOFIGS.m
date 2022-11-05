@@ -43,9 +43,13 @@ end
 
 % If energy values were saved but no spectra were collected, make empty array as placeholder
 sdim=size(S.spectr);
-if sdim(3)>length(S.eVenergy)
-	S.spectr=S.spectr(:,:,1:length(S.eVenergy));
+if ndims(S.spectr) == 3 %catching stacks with only one image (usually aborted stacks)
+	if sdim(3)>length(S.eVenergy)
+		S.spectr=S.spectr(:,:,1:length(S.eVenergy));
+	end
 end
+
+
 
 filenames = cell(1,1);
 cnt=1;
