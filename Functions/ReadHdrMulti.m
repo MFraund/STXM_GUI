@@ -54,7 +54,7 @@ while feof(filestream) == 0
 	end
 	
 	
-
+%% Normal, Single image stack/map
 	if numregions == 1
 		if ~isempty(energypos)
 			line=fgets(filestream);
