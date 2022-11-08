@@ -26,8 +26,6 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 [varargin,binAdjTest] = ExtractVararginValue(varargin,'Bin Adjust Flag',0);
 [varargin,givenBinMap] = ExtractVararginValue(varargin,'Bin Map',0);
 
-
-
 %% Loading Stack Info
 cd(datafolder) %% move to raw data folder
 foldstruct = dir; % makes a structure out of all folders
@@ -40,7 +38,6 @@ else
 	S = givenStruct; %TODO test if this is the correct use for givenstruct
 end
 
-
 % If energy values were saved but no spectra were collected, make empty array as placeholder
 sdim=size(S.spectr);
 if ndims(S.spectr) == 3 %catching stacks with only one image (usually aborted stacks)
@@ -48,8 +45,6 @@ if ndims(S.spectr) == 3 %catching stacks with only one image (usually aborted st
 		S.spectr=S.spectr(:,:,1:length(S.eVenergy));
 	end
 end
-
-
 
 filenames = cell(1,1);
 cnt=1;

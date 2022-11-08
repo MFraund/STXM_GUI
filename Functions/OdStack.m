@@ -37,20 +37,6 @@ end
 [varargin, autoGammaFlag] = ExtractVararginValue(varargin, 'Auto Gamma', 1);
 [varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
 
-% standard_gamma = 2;
-% 
-% if nargin < 3
-% 	plotflag = 0;
-% 	manualiocheck = 'no';
-%     imgadjust_gamma = standard_gamma;
-% elseif nargin < 4
-% 	manualiocheck = 'no';
-%     imgadjust_gamma = standard_gamma;
-% elseif nargin < 5
-%     imgadjust_gamma = standard_gamma;
-% end
-
-
 % create temporary variables
 stack=structin.spectr;
 eVlength=length(structin.eVenergy);
