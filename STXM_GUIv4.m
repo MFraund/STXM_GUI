@@ -748,7 +748,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		threshMethod_val = get(hthresholding_dropdown,'Value');
 		threshMethod = threshMethod_str{threshMethod_val};
 		
-        
         for i = 1:lreadydirs
 			if ispc()
 				separationidx = strfind(readydirs{i},' \ ');
@@ -781,20 +780,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         set(hpopupimages,'Visible','on');%,'Value',1)
         
 %         set(hsort,'Visible','off')
-        
-        
-        
-        if usesaveflag == 1
-			
-						
+        if usesaveflag == 1		
             if any(exist('sillystring','file'))
                 hwait = waitbar(0,sillystring);
             else
                 hwait = waitbar(0,'plz w8');
             end
 
-            
-            
 			for j = 1:length(dirstorun)
                 cd(dirstorun{j});
                 currdir = dir;
@@ -844,9 +836,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                         Dataset.(currfov).binadjtest = 0;
                     end
                     
-                    try
-                        Dataset.(currfov).threshlevel = tempdataset.threshlevel;
-                    catch
+					try
+						Dataset.(currfov).threshlevel = tempdataset.threshlevel;
+					catch
 						Dataset.(currfov).threshlevel = 2;
 					end
 					
