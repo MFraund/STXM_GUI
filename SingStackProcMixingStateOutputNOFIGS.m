@@ -69,9 +69,12 @@ end
 S = AlignStack(S);
 
 %% OdStack
-if length(S.eVenergy)<3
+if length(S.eVenergy)<3 %just pre/post map
 % 	Snew=OdStack(S,'map',0,'no',threshlevel);
 	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
+	
+elseif length(S.eVenergy) >= 20 %must be a stack then
+	Snew = OdStack(S, 'O', 'Auto Gamma','yes','imadjust_gamma',gammaLevel);
 else
 % 	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
 	Snew=OdStack(S,threshMethod, 'Auto Gamma','yes', 'imadjust_gamma', gammaLevel);

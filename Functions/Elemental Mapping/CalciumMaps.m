@@ -15,7 +15,7 @@ else
     disp('missing Ca pre-edge energy');
 end
 
-if capostval > 350 && capostval < 355
+if capostval > 350 && capostval < 355 %its not reall post, but rather peak values we're looking for here
 else
     disp('Missing Ca post-edge energy');
 end
