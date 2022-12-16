@@ -50,66 +50,49 @@ S.spectr=zeros(size(structin.spectr,1),size(structin.spectr,2),size(structin.spe
 xAxislabel=[0,S.Xvalue];
 yAxislabel=[0,S.Yvalue];
 
-% particle masking & thresholding with constant threshold condition
-if strcmp(method,'C')==1
-    
-    imagebuffer=mean(stack,3);
-    imagebuffer=medfilt2(imagebuffer); % median filtering of the stack mean
-    GrayImage=mat2gray(imagebuffer); % Turn into a greyscale with vals [0 1]
-    mask=zeros(size(GrayImage));
-    mask(GrayImage>=0.85)=1; % Detect particle free image regions
-    
-    % particle masking & thresholding using Otsu's method
-elseif strcmp(method,'O')==1
-    
-    imagebuffer=mean(stack,3);  %% Use average of all images in stack
-    
-    %imagebuffer = FindingTotGradAngle(imagebuffer); % this removes the linear intensity gradient present in some image backgrounds
-    
-    GrayImage=mat2gray(imagebuffer); %% Turn into a greyscale with vals [0 1]
-    GrayImage=imadjust(GrayImage,[0 1],[0 1],imadjust_gamma); %% increase contrast
-    %     GrayImage=imadjust(GrayImage,[0 1],[0 1],2); %%Contrast of 2 for maps
-    
-    Thresh=graythresh(GrayImage); %% Otsu thresholding
-    mask=im2bw(GrayImage,Thresh); %% Give binary image
-    
-    % Thresholding for maps -- doesnt need as much contrast adjustment
-elseif strcmp(method,'map')==1
-    imagebuffer=mean(stack,3);  %% Use average of all images in stack
-    GrayImage=mat2gray(imagebuffer); %% Turn into a greyscale with vals [0 1]
-    %     GrayImage=imadjust(GrayImage,[0 1],[0 1],15); %% increase contrast
-    GrayImage=imadjust(GrayImage,[0 1],[0 1],2); %%Contrast of 2 for maps
-    
-    Thresh=graythresh(GrayImage); %% Otsu thresholding
-    mask=im2bw(GrayImage,Thresh); %% Give binary image
-    
-elseif strcmp(method,'adaptive') == 1
-	imagebuffer=mean(stack,3);  %% Use average of all images in stack
-	grayim=mat2gray(imagebuffer); %% Turn into a greyscale with vals [0 1]
-	grayim = abs(1-grayim);
 
-	% Background Subtracting
-	se = strel('disk', 30);
-	topim = imtophat(grayim, se);
-	
-	[grayim, imadjust_gamma] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
-	
+%% Background Subtraction
+
+imagebuffer=mean(stack,3);  %% Use average of all images in stack
+grayim=mat2gray(imagebuffer); %% Turn into a greyscale with vals [0 1]
+grayim = abs(1-grayim); % Make sure particles are "bright" regions, close to 1
+
+% Structuring element then tophat filter using SE
+se = strel('disk', 30);
+topim = imtophat(grayim, se);
+
+% Gamma adjust
+[grayim, imadjust_gamma] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
+
+%% Thresholding method
+if strcmpi(method,'C')==1 % Constant thresholding (rarely used)
+    mask=zeros(size(grayim));
+    mask(grayim>=0.85)=1; % Detect particle free image regions
+    
+elseif strcmpi(method,'O')==1 % Basic Otsu's method
+    Thresh=graythresh(grayim); %% Otsu thresholding
+    mask=im2bw(grayim,Thresh); %% Give binary image
+    
+elseif strcmpi(method,'map')==1 % Thresholding for maps
+    Thresh=graythresh(grayim); %% Otsu thresholding
+    mask=im2bw(grayim,Thresh); %% Give binary image
+    
+elseif strcmpi(method,'adaptive') == 1 % Adaptive thresholding
     T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
 	mask = imbinarize(grayim,T_ad);
-    
 	mask = bwareaopen(mask, 8);
-	
 	mask = ~mask;
 	
 else % Thresholding method not defined
-    
-    display('Error! No thresholding method defined! Input structure not converted!')
+    disp('Error! No thresholding method defined! Input structure not converted!')
     return
     
 end
- S.mask=mask;
+%TODO - use bwareaopen on all outputs to thresholding
+ S.mask = mask;
  S.gamma = imadjust_gamma;
-% Izero extraction
+ 
+%% Izero extraction
 
 %%%%% this section replaced with an optional input
 %If you get annoyed with this prompt, uncomment the manualiocheck line and comment
@@ -117,7 +100,7 @@ end
 % manualiocheck = 'no';
 % manualiocheck = inputdlg('Do you want to manually define an Io region? (Cancel continues with automatic method)','Manual Io Check',1,{'yes'});
 
-if strcmp(manualiocheck,'yes') == 1
+if strcmpi(manualiocheck,'yes') == 1
     avgstackfig = figure('Name','Define an Io region','NumberTitle','off');
     imagesc(imagebuffer);
     colormap gray;
@@ -140,7 +123,6 @@ if strcmp(manualiocheck,'yes') == 1
     errIzero(:,1) = S.eVenergy;
     
     for cnt=1:eVlength
-        
         buffer=stack((cliprowstart):(cliprowend),(clipcolstart):(clipcolend),cnt); %This selects the region selected previously for energy "cnt"
         Izero(cnt,2)=mean(mean(buffer));
         stdIzero(cnt,2) = std(std(buffer));
@@ -150,12 +132,9 @@ if strcmp(manualiocheck,'yes') == 1
         
     end
 
-    
-elseif strcmp(manualiocheck,'given') == 1  %%%this part was considered but is extra work and was put on the back burner
-    
+elseif strcmpi(manualiocheck,'given') == 1  %%%this part was considered but is extra work and was put on the back burner
     
 else
-    
     Izero=zeros(eVlength,2);
     stdIzero = zeros(eVlength,2);
     errIzero = zeros(eVlength,2);
@@ -166,7 +145,6 @@ else
     
     % loop over energy range of stack, calculate average vor each energy -> return_spec
     for cnt=1:eVlength
-        
         buffer=stack(:,:,cnt);
         Izero(cnt,2)=mean(buffer(mask==1));
         stdIzero(cnt,2) = std(buffer(mask==1));
@@ -180,17 +158,15 @@ end
 S.Izero=Izero;
 S.stdIzero = stdIzero;
 S.errIzero = errIzero;
-% stack conversion Intensity --> Optical Density
 
+%% OD Calculation - Conversion from Intensity to Optical Density
 S.errOD = zeros(size(S.spectr));
 
 for k=1:eVlength
-    
     S.spectr(:,:,k)= -log(stack(:,:,k)/Izero(k,2)); 
     S.errOD(:,:,k) = (errIzero(k,2)) .* sqrt((1./stack(:,:,k).^2) + (1./Izero(k,2).^2));
+	
 end
-
-% S.position = structin.position;
 
 %% Plot results
 if plotflag==1
