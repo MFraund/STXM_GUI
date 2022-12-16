@@ -86,7 +86,6 @@ elseif strcmpi(method,'adaptive') == 1 % Adaptive thresholding
 else % Thresholding method not defined
     disp('Error! No thresholding method defined! Input structure not converted!')
     return
-    
 end
 %TODO - use bwareaopen on all outputs to thresholding
  S.mask = mask;
@@ -129,7 +128,6 @@ if strcmpi(manualiocheck,'yes') == 1
         numIzero = numel(buffer);
         errIzero(cnt,2) = 1.96 .* stdIzero(cnt,2) ./ sqrt(numIzero); %1.96 comes from t-distribution with an alpha level of 0.05
         clear buffer
-        
     end
 
 elseif strcmpi(manualiocheck,'given') == 1  %%%this part was considered but is extra work and was put on the back burner
@@ -151,7 +149,6 @@ else
         numIzero = sum(sum(mask));
         errIzero(cnt,2) = 1.96 .* stdIzero(cnt,2) ./ sqrt(numIzero); %1.96 comes from t-distribution with an alpha level of 0.05
         clear buffer
-        
     end
 end
 
@@ -165,7 +162,6 @@ S.errOD = zeros(size(S.spectr));
 for k=1:eVlength
     S.spectr(:,:,k)= -log(stack(:,:,k)/Izero(k,2)); 
     S.errOD(:,:,k) = (errIzero(k,2)) .* sqrt((1./stack(:,:,k).^2) + (1./Izero(k,2).^2));
-	
 end
 
 %% Plot results
