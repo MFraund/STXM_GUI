@@ -336,7 +336,7 @@ popupimagesPOS(1,1) = radiomultiplePOS(1,1) + 0.05;
 
 hpopupimages = uicontrol(...
     'Style','popupmenu',...
-    'String',{'Prepost Images','Raw Images','Organic Vol. Fractions','ODStack Images','CarbonMaps Images','Alignment','Size Distribution'},...
+    'String',{'Data Summary', 'Prepost Images','Raw Images','Organic Vol. Fractions','ODStack Images','CarbonMaps Images','Alignment','Size Distribution'},...
     'Units','normalized',...
     'Visible','off',...
     'Tag','DataViewer',...
@@ -365,6 +365,15 @@ hpanelsingle = uipanel(f,...
     'Visible','off',...
     'HandleVisibility','on');
 
+global currDataInfo
+currDataInfo = {['# Particles: ', '1'],['Mean Size: ', 2],['Mean Vol. Frac.: ', 3],['# Energies: ', 4],'5'};
+hdatainfo = uicontrol(...
+	'Style','text',...
+	'Visible','off',...
+	'Tag','DataViewer',...
+	'Units','normalized',...
+	'Position',[0.355, 0.75, 0.07, 0.1],...
+	'String',currDataInfo);
 
 hstacklabbutton = uicontrol(...
     'Style','pushbutton',...
@@ -439,7 +448,7 @@ hmenuitems = uimenu(hsavecontext,...
     'Label','Save plot window',...
     'Callback',@context_callback);
 
-%%
+%% StackLab Components
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%STACKLAB Components
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -522,7 +531,7 @@ hsavestackfig = uicontrol(...
     'Tag','Stacklab',...
     'Position',[0.875,0.01,0.07,0.05]);
 
-%%
+%% Quality Control Buttons
 %%%% Adding Quality Control Buttons
 %%%%
 hcarbon_mixingstate = uicontrol(...
@@ -978,6 +987,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         currSnew = Dataset.(Datasetnames{1}).Snew;
         currelements= fieldnames(currSnew.elements);
+		
         cnt = 0;
         for i = 1:length(heleboxlist)
             if currSnew.elements.(currelements{i}) == 1
@@ -1019,6 +1029,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
                 radiosingleval = get(hradiosingle,'Value');
                 radiomultipleval = get(hradiomultiple,'Value');
+				currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
+				currDataInfo = {['# Particles: ' + string(length(currSnew.Size))],['Mean Size: ' + string(mean(currSnew.Size))],['Mean Vol. Frac.: ' + string(mean(currSnew.VolFrac))],['# Energies: ' + string(length(currSnew.eVenergy))]};
+				set(hdatainfo,'String',currDataInfo);
                 
                 energy= Dataset.(Datasetnames{readyvalue}).Snew.eVenergy;
                 Xvalue = Dataset.(Datasetnames{readyvalue}).Snew.Xvalue;
@@ -1049,6 +1062,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 set(hplottitle,'String',Datasetnames{readyvalue});
                 
                 switch popupimagestr{popupimageval}
+					case 'Data Summary'
+						set(helementpanel,'Visible','on');
+						DataSummary()
+						
                     case 'Prepost Images'
                         set(helementpanel,'Visible','on');
                         set(rawbg,'Visible','off');
@@ -1861,7 +1878,120 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     
             end 
         end        
-    end
+	end
+
+%% Data Summary Plots
+	function DataSummary()
+		Sval = get(hSulfurbox,'Value');
+		Cval = get(hCarbonbox,'Value');
+		Kval = get(hPotassiumbox,'Value');
+		Caval = get(hCalciumbox,'Value');
+		Nval = get(hNitrogenbox,'Value');
+		Oval = get(hOxygenbox,'Value');
+		
+		readyvalue = get(hlistready,'Value');
+		currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
+		currelements= fieldnames(currSnew.elements);
+		
+		eleflagvec = [Sval;Cval;Kval;Caval;Nval;Oval];
+		totelefield = {'totS','TotC','totK','totCa','totN','totO'};
+		
+		elenum = Sval + Cval + Kval + Caval + Nval + Oval;
+		
+		%Making only boxes which have elemental data visible
+		for i = 1:length(heleboxlist)
+			if currSnew.elements.(currelements{i}) == 1
+				set(heleboxlist{i},'Visible','on');
+				
+			else
+				set(heleboxlist{i},'Visible','off');
+				if eleflagvec(i) == 1 %if a box is checked but there is no data, uncheck the box
+					eleflagvec(i) = 0;
+					set(heleboxlist{i},'Value',0);
+				end
+			end
+		end
+		
+		%Making sure only 1 boxes can be checked at a time because I only want a
+		%4x4 subplot, any more and you cant see much.
+		if elenum == 1
+			uncheckedboxes = findobj('Tag','DataViewer','-and','Value',0,'-and','Style','checkbox','-and','Parent',helementpanel);
+			set(uncheckedboxes,'Enable','off');
+		else
+			allboxes = findobj('Tag','DataViewer','-and','Style','checkbox','-and','Parent',helementpanel);
+			set(allboxes,'Enable','on');
+		end
+		
+		checkedele = find(eleflagvec == 1);
+		
+		panelplots = findobj('Parent',hpanelmultiple);
+		delete(panelplots);
+		
+		set(hpanelmultiple,'Visible','on');
+		set(hpanelsingle,'Visible','off');
+		
+		MatSiz=size(currSnew.LabelMat);
+		Xvalue = currSnew.Xvalue;
+		Yvalue = currSnew.Yvalue;
+		XSiz=Xvalue/MatSiz(1);
+		YSiz=Yvalue/MatSiz(2);
+		xdat=(0:XSiz:Xvalue);
+		ydat=(0:YSiz:Yvalue);
+		
+				
+		subhandle{1} = subplot(2,2,1);
+		image(xdat,ydat,uint8(currSnew.RGBCompMap));
+		title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',0.35));
+		set((subhandle{1}),'Parent',hpanelmultiple);
+		axis image
+		xlabel('X (\mum)');
+		ylabel('Y (\mum)');
+		
+		subhandle{2} = subplot(2,2,2);
+		imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
+		axis image
+		xlabel('X (\mum)');
+		ylabel('Y (\mum)');
+		colormap('parula');
+		set((subhandle{2}),'Parent',hpanelmultiple);
+		title(totelefield{checkedele(1)});
+		cbar{i} = colorbar;
+		
+		subhandle{3} = subplot(2,2,3);
+		imagesc([0,Xvalue],[0,Yvalue],currSnew.ThickMap(:,:,end));
+		axis image
+		xlabel('X (\mum)');
+		ylabel('Y (\mum)');
+		colormap(subhandle{3},parula)
+		title('Organic Vol Frac');
+		set(subhandle{3},'Parent',hpanelmultiple);
+		cbar{3} = colorbar;
+		
+		subhandle{4} =  subplot(2,2,4);
+% 		volfracdist = max(currSnew.VolFrac) - min(currSnew.VolFrac);
+% 		%nhistbins = round(volfracdist./0.05);
+% 		histogram(currSnew.VolFrac,[0:0.05:1]);
+% 		xlabel('Org Vol Frac');
+% 		ylabel('Particle #');
+% 		set(subhandle{4},'Parent',hpanelmultiple,'XLim',[0,1]);
+		
+		[n, binctrs] = hist3([currSnew.Size', currSnew.VolFrac] ,[20,20],'CDataMode','auto');
+		xbindist = binctrs{1,1}(1,2)-binctrs{1,1}(1,1);
+		ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
+		xbinverts = binctrs{1,1}-xbindist;
+		ybinverts = binctrs{1,2}-ybindist;
+		
+		pcolor(xbinverts, ybinverts, n');
+		axis square
+		xlabel('Particle Size (CED, \mum)');
+		ylabel('Vol. Frac.');
+		title('2D Histogram');
+		colormap(subhandle{4},plasma)
+		colorbar
+		
+		
+	end
+
 
 %% Visualizing limit on OD linearity
     function hODlimit_callback(~,~)
