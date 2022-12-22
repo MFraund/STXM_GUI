@@ -57,6 +57,15 @@ elseif isempty(test)
     return
 end
 
+% [varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
+% [varargin, rootdir] = ExtractVararginValue(varargin, 'Root Directory', 0.35);
+% [varargin, sample] = ExtractVararginValue(varargin, 'Sample', 0.35);
+% [varargin, manualbinmapcheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
+% [varargin, binmap] = ExtractVararginValue(varargin, 'Binmap', 0.35);
+% [varargin, figsav] = ExtractVararginValue(varargin, 'Save Figures', 0);
+% [varargin, nofig] = ExtractVararginValue(varargin, 'Plot Figures', 0);
+
+
 if isempty(varargin)
     spThresh=0.35;
     figsav=0;
@@ -320,6 +329,7 @@ if ~isempty(sp2idx)
     sp2(isnan(sp2)==1) = 0;
        
 	sp2(sp2 < 0) = 0;
+	sp2frac = sp2;
     sp2 = removeoutlier_IQRtest(sp2); %removing very large numbers
     
     sp2noise = std(rawsp2(Snew.mask==1));
@@ -484,6 +494,7 @@ Snew.Maps=zeros(xysiz(1),xysiz(2),3);
 Snew.Maps(:,:,1)=carb;
 Snew.Maps(:,:,2)=prepost;
 Snew.Maps(:,:,3)=sp2;
+Snew.sp2frac = sp2frac;
 
 Snew.errcarb = errcarb;
 Snew.errprepost = errprepost;

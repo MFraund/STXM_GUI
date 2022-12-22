@@ -1031,7 +1031,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 radiomultipleval = get(hradiomultiple,'Value');
 				currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 				currDataInfo = {['# Particles: ' + string(length(currSnew.Size))],['Mean Size: ' + string(mean(currSnew.Size))],['Mean Vol. Frac.: ' + string(mean(currSnew.VolFrac))],['# Energies: ' + string(length(currSnew.eVenergy))]};
-				set(hdatainfo,'String',currDataInfo);
+% 				set(hdatainfo,'String',currDataInfo);
                 
                 energy= Dataset.(Datasetnames{readyvalue}).Snew.eVenergy;
                 Xvalue = Dataset.(Datasetnames{readyvalue}).Snew.Xvalue;
@@ -1407,7 +1407,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             'Parent',hpanelsingle,...
                             'Tag','haxes',...
                             'HandleVisibility','on');
-						histogram(Snew.Size,[0:0.1:(max(Snew.Size)+0.1)]);
+						histogram(currSnew.Size,[0:0.1:(max(currSnew.Size)+0.1)]);
                         
                 end
                 
@@ -1975,19 +1975,24 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 % 		ylabel('Particle #');
 % 		set(subhandle{4},'Parent',hpanelmultiple,'XLim',[0,1]);
 		
-		[n, binctrs] = hist3([currSnew.Size', currSnew.VolFrac] ,[20,20],'CDataMode','auto');
-		xbindist = binctrs{1,1}(1,2)-binctrs{1,1}(1,1);
-		ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
-		xbinverts = binctrs{1,1}-xbindist;
-		ybinverts = binctrs{1,2}-ybindist;
 		
-		pcolor(xbinverts, ybinverts, n');
-		axis square
-		xlabel('Particle Size (CED, \mum)');
-		ylabel('Vol. Frac.');
-		title('2D Histogram');
-		colormap(subhandle{4},plasma)
-		colorbar
+		try
+			[n, binctrs] = hist3([currSnew.Size', currSnew.VolFrac] ,[20,20],'CDataMode','auto');
+			xbindist = binctrs{1,1}(1,2)-binctrs{1,1}(1,1);
+			ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
+			xbinverts = binctrs{1,1}-xbindist;
+			ybinverts = binctrs{1,2}-ybindist;
+
+			pcolor(xbinverts, ybinverts, n');
+			axis square
+			xlabel('Particle Size (CED, \mum)');
+			ylabel('Vol. Frac.');
+			title('2D Histogram');
+			colormap(subhandle{4},plasma)
+			colorbar
+		catch
+			currSnew.Size
+		end
 		
 		
 	end

@@ -64,6 +64,9 @@ topim = imtophat(grayim, se);
 % Gamma adjust
 [grayim, imadjust_gamma] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
 
+% Median filtering to get rid of noise
+grayim = medfilt2(grayim);
+
 %% Thresholding method
 if strcmpi(method,'C')==1 % Constant thresholding (rarely used)
     mask=zeros(size(grayim));
@@ -81,14 +84,13 @@ elseif strcmpi(method,'adaptive') == 1 % Adaptive thresholding
     T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
 	mask = imbinarize(grayim,T_ad);
 	mask = bwareaopen(mask, 8);
-	mask = ~mask;
 	
 else % Thresholding method not defined
     disp('Error! No thresholding method defined! Input structure not converted!')
     return
 end
 %TODO - use bwareaopen on all outputs to thresholding
- S.mask = mask;
+ S.mask = ~mask;
  S.gamma = imadjust_gamma;
  
 %% Izero extraction
