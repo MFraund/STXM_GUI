@@ -1031,7 +1031,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 radiomultipleval = get(hradiomultiple,'Value');
 				currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 				currDataInfo = {['# Particles: ' + string(length(currSnew.Size))],['Mean Size: ' + string(mean(currSnew.Size))],['Mean Vol. Frac.: ' + string(mean(currSnew.VolFrac))],['# Energies: ' + string(length(currSnew.eVenergy))]};
-% 				set(hdatainfo,'String',currDataInfo);
+				try
+					set(hdatainfo,'String',currDataInfo);
+				catch
+				end
                 
                 energy= Dataset.(Datasetnames{readyvalue}).Snew.eVenergy;
                 Xvalue = Dataset.(Datasetnames{readyvalue}).Snew.Xvalue;
@@ -1650,7 +1653,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function context_callback(source,~)
         popupval = get(hroutinepopup,'Value');
         popupstr = get(hroutinepopup,'String');
-        switch popupstr{popupval};
+        switch popupstr{popupval}
             case 'Data Viewer'
                 labelstr = get(source,'Label');
                 %         set(hsavecontext,'Visible','on');
@@ -1786,8 +1789,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         elenum = Sval + Cval + Kval + Caval + Nval + Oval;
         
         %Making only boxes which have elemental data visible
-        for i = 1:length(heleboxlist);
-            if currSnew.elements.(currelements{i}) == 1;
+        for i = 1:length(heleboxlist)
+            if currSnew.elements.(currelements{i}) == 1
                 set(heleboxlist{i},'Visible','on');
             else
                 set(heleboxlist{i},'Visible','off');
@@ -2581,14 +2584,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         %making number list so that selected points are numbered in order
         numlabels = cellstr(num2str((1:length(prex_selected))'));
-        for kk = 1:length(prex_selected);
+        for kk = 1:length(prex_selected)
             text(prex_selected(kk),prey_selected(kk),numlabels{kk},...
                 'VerticalAlignment','bottom',...
                 'HorizontalAlignment','right',...
                 'Color','r');
         end
         
-        if exist('help_hdl','var') ;
+        if exist('help_hdl','var') 
             close(help_hdl);
         end
         
@@ -2598,7 +2601,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         [postx_selected, posty_selected] = getpts(fpost);
         figure(fpost);
         
-        if exist('help_hdl2','var') ;
+        if exist('help_hdl2','var')
             close(help_hdl2);
         end
         movingPoints = cat(2,postx_selected,posty_selected);

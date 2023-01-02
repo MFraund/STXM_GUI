@@ -118,31 +118,36 @@ stack=Snew.spectr;
 subdim=ceil(sqrt(length(energy)));
 
 %% Finding relevant energy indicies
-[~,sp2idx] = min(abs(energy - 285.4));
-[~,preidx] = min(abs(energy - 278));
-[~,carboxidx] = min(abs(energy - 288.6));
-[~,postidx] = min(abs(energy - 320));
+[~,preidx] = ClosestValue(energy, 278, [277, 283], 'Error Message', 'missing pre-edge energy');
+[~,sp2idx] = ClosestValue(energy, 285.4, [284.5, 285.6], 'Error Message', 'missing sp2 energy');
+[~,carboxidx] = ClosestValue(energy, 288.6, [288, 289], 'Error Message', 'missing carbox energy');
+[~,postidx] = ClosestValue(energy, 320, [320, 325], 'Error Message', 'missing post-edge energy');
 
-sp2val = energy(sp2idx);
-preval = energy(preidx);
-carboxval = energy(carboxidx);
-postval = energy(postidx);
-
-if sp2val < 284.5 || sp2val > 285.6
-	disp('missing sp2 energy');
-end
-
-if preval <277 || preval > 283
-	disp('missing pre-edge energy');
-end
-
-if carboxval < 288 || carboxval > 289
-	disp('missing carbox energy');
-end
-
-if postval <320 || postval > 325
-	disp('missing post-edge energy');
-end
+% [~,sp2idx] = min(abs(energy - 285.4));
+% [~,preidx] = min(abs(energy - 278));
+% [~,carboxidx] = min(abs(energy - 288.6));
+% [~,postidx] = min(abs(energy - 320));
+% 
+% sp2val = energy(sp2idx);
+% preval = energy(preidx);
+% carboxval = energy(carboxidx);
+% postval = energy(postidx);
+% 
+% if sp2val < 284.5 || sp2val > 285.6
+% 	disp('missing sp2 energy');
+% end
+% 
+% if preval <277 || preval > 283
+% 	disp('missing pre-edge energy');
+% end
+% 
+% if carboxval < 288 || carboxval > 289
+% 	disp('missing carbox energy');
+% end
+% 
+% if postval <320 || postval > 325
+% 	disp('missing post-edge energy');
+% end
 
 pre = stack(:,:,preidx);
 sp2im = stack(:,:,sp2idx);

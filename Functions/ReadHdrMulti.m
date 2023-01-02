@@ -1,4 +1,4 @@
-function [evenergy,xvalue,yvalue,multiregion,positionstruct]=ReadHdrMulti(file)
+function [evenergy, xvalue, yvalue, multiregion, positionstruct] = ReadHdrMulti(hdrfile)
 
 % Read STXM .hdr file to extract energies and x and y pixel sizes
 %[evenergy,xvalue,yvalue,multiregion,positionstruct]=ReadHdr(file)
@@ -24,7 +24,7 @@ function [evenergy,xvalue,yvalue,multiregion,positionstruct]=ReadHdrMulti(file)
 %positionstruct.ypts	= # of points taken in y
 %
 % updated by Matthew Fraund Nov. 2015
-filestream = fopen(file, 'r');    %% Open file
+filestream = fopen(hdrfile, 'r');    %% Open file
 cnt=1;
 multiregion = 0; %default unless strfind finds the multi region flag
 numregions = [];
