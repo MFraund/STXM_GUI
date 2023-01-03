@@ -3,7 +3,6 @@ function [dirLabel] = StackOrMap(dirPath)
 % [out] = StackOrMap(dirpath)
 % Determining if a directory is a stack, a map, or a single image
 
-
 dirContents = dir(dirPath);
 
 hdrcnt = 0;

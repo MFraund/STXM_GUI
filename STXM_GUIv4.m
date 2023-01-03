@@ -99,8 +99,15 @@ hload = uicontrol(...
     'Style','pushbutton',...
     'String','Load STXM Data',...
     'Units','normalized',...
-    'Position',[0.01,0.88,0.1,0.053],...
+    'Position',[0.01,0.88,0.05,0.053],...
     'Callback',{@hload_callback});
+
+hload_recursive = uicontrol(...
+	'Style','pushbutton',...
+    'String','Load All Recursive',...
+    'Units','normalized',...
+    'Position',[0.06,0.88,0.05,0.053],...
+    'Callback',{@hload_recursive_callback});
 
 hanalyze = uicontrol(...
     'Style','pushbutton',...
@@ -643,6 +650,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             folders{i} = foldername; %making list of directory names
 			
+			% Different folder connectors for OS types
 			if ispc()
 				tempfiledir = strcat(filedirs{i},'\');
 				fullfolders{i} = [foldername_up2,' \ ',foldername_up1,' \ ',foldername];
@@ -651,6 +659,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				fullfolders{i} = [foldername_up2,' / ',foldername_up1,' / ',foldername];
 			end
 			
+			% Determining type of data set
 			dirLabel = StackOrMap(tempfiledir);
 			if strcmp(dirLabel,'map')
 				dirtype{i} = 'map  ';
@@ -667,8 +676,112 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         set(hlistready,'String',displaydirs);
         set(hanalyze,'Enable','on');
         set(hremove,'Enable','on');
-    end
+	end
 
+%% hload_recursive
+	function hload_recursive_callback(~,~)
+		startDir = uipickfiles(...
+			'NumFiles',1,...
+			'REFilter','\.bloooooop$',...
+			'Prompt','Select Starting Directory For Recursive Data Scraping');
+		
+		dataDirs = recursive_load(startDir{1});
+		filedirs = dataDirs(~cellfun(@isemptyr, dataDirs));
+		
+		
+		numdirs = length(filedirs);
+        folders = cell(1,numdirs); %preallocating folders cell array
+        dirtype = cell(1,numdirs); %preallocating
+        displaydirs = cell(1,numdirs);
+        for i = 1:numdirs %looping through each selected directory
+            [folderpath,foldername,~] = fileparts(filedirs{i}); %only picking the foldernames for brevity
+            [folderpath_up1,foldername_up1,~] = fileparts(folderpath);
+            [~,foldername_up2,~] = fileparts(folderpath_up1);
+            
+            folders{i} = foldername; %making list of directory names
+			
+			% Different folder connectors for OS types
+			if ispc()
+				tempfiledir = strcat(filedirs{i},'\');
+				fullfolders{i} = [foldername_up2,' \ ',foldername_up1,' \ ',foldername];
+			elseif ismac()
+				tempfiledir = strcat(filedirs{i},'/');
+				fullfolders{i} = [foldername_up2,' / ',foldername_up1,' / ',foldername];
+			end
+			
+			% Determining type of data set
+			dirLabel = StackOrMap(tempfiledir);
+			if strcmp(dirLabel,'map')
+				dirtype{i} = 'map  ';
+			elseif strcmp(dirLabel,'stack')
+				dirtype{i} = 'stack';
+			end
+			
+            displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
+			if isempty(displaydirs{i})
+				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
+			end
+		end
+		
+        set(hlistready,'String',displaydirs);
+        set(hanalyze,'Enable','on');
+        set(hremove,'Enable','on');
+		
+		
+		function dirOut = recursive_load(dirIn)
+			dirContents = dir(dirIn);
+			dirContents = dirContents(3:end); %removing '.' and '..'
+			
+			numDirs = sum([dirContents.isdir]);
+			if numDirs == 0 % Base Case
+				numHdr = count([dirContents.name], '.hdr');
+				numXim = count([dirContents.name], '.xim');
+				if numHdr == 1 % Only 1 hdr file
+					if numXim > 1 %and many images
+						dirOut = dirIn;
+					else %and no images (error) or only one image (standalone hdr/xim pair)
+						dirOut = [];
+					end
+					
+				elseif numHdr <= 10 % Small/contained number of .hdr files.  10 would be an overly large map
+					cnt = 0;
+					for h = 1:length(dirContents)
+						if contains(dirContents(h).name,'.hdr')
+							cnt = cnt + 1;
+							hdrFile = fullfile(dirContents(h).folder, dirContents(h).name);
+							[~, ~, ~, ~, positionStruct] = ReadHdrMulti(hdrFile);
+							currXYVals = [positionStruct.xcenter, positionStruct.ycenter];
+							xyvals(cnt,:) = currXYVals;
+							
+							if cnt > 1
+								xdiff = abs(xyvals(cnt,1) - xyvals(cnt-1, 1));
+								ydiff = abs(xyvals(cnt,2) - xyvals(cnt-1, 2));
+								
+								if xdiff > 10 || ydiff > 10 % hdr files are too far away from each other to be of the same FOV
+									dirOut = [];
+									break
+								end
+								
+							end
+						else
+							dirOut = dirIn;
+						end
+					end
+				else % many more hdr files than in a map, this must be just a collection of images
+					dirOut = [];
+				end
+			elseif numDirs > 0 %If folders are present, it's not a data set
+				nestDirs = dirContents([dirContents.isdir]);
+				for d = 1:numDirs
+					currNestDir = fullfile(nestDirs(d).folder, nestDirs(d).name);
+					dirOut{d} = recursive_load(currNestDir);
+				end
+			end
+			
+		end
+		
+		
+	end
 
 %% hremove callback
 %hremove button moves data from "ready list" to "load list" This is EXACTLY
@@ -2737,7 +2850,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			filedirs = [];
 		end
 		
-		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr');
+		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr','Append',filedirs);
 		
 		if ~iscell(newfiledirs) % If user presses cancel button
 			return;
