@@ -650,22 +650,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				tempfiledir = strcat(filedirs{i},'/');
 				fullfolders{i} = [foldername_up2,' / ',foldername_up1,' / ',foldername];
 			end
-
-            cd(tempfiledir); %moving to each directory
-            tempfilenames = ls; %listing out file names
-            cnt = 0;
-            for j = 1:size(tempfilenames,1) %looping through each file name and counting .hdr files
-                if any(strfind(tempfilenames(j,:),'.hdr'))
-                    cnt = cnt + 1;
-                    if cnt == 2
-                        dirtype{i} = 'map  '; %if 2 or more .hdr files are in one dir, it's a map
-                        break
-                    end
-                end
-            end
-            if cnt == 1
-                dirtype{i} = 'stack'; %if only 1 .hdr file is present, it is a stack
-            end
+			
+			dirLabel = StackOrMap(tempfiledir);
+			if strcmp(dirLabel,'map')
+				dirtype{i} = 'map  ';
+			elseif strcmp(dirLabel,'stack')
+				dirtype{i} = 'stack';
+			end
+			
             displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
 			if isempty(displaydirs{i})
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
