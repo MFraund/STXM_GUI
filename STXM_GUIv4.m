@@ -681,24 +681,27 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %% hload_recursive
 	function hload_recursive_callback(~,~)
 		startDir = uipickfiles(...
-			'NumFiles',1,...
-			'REFilter','\.bloooooop$',...
+			'REFilter','\.removefilesfromlist$',...
 			'Prompt','Select Starting Directory For Recursive Data Scraping');
 		
-		dataDirs = recursive_load(startDir{1});
-		filedirs = dataDirs(~cellfun(@isemptyr, dataDirs));
-		
+		for sDirIdx = 1:length(startDir)
+			dataDirs = recursive_load(startDir{sDirIdx});
+			dataDirs_unpacked = UnpackCell(dataDirs);
+			dataDirs_cleaned = dataDirs_unpacked(~cellfun(@isempty, dataDirs_unpacked));
+			filedirs = cat(1, filedirs, dataDirs_cleaned);
+			
+		end
 		
 		numdirs = length(filedirs);
-        folders = cell(1,numdirs); %preallocating folders cell array
-        dirtype = cell(1,numdirs); %preallocating
-        displaydirs = cell(1,numdirs);
-        for i = 1:numdirs %looping through each selected directory
-            [folderpath,foldername,~] = fileparts(filedirs{i}); %only picking the foldernames for brevity
-            [folderpath_up1,foldername_up1,~] = fileparts(folderpath);
-            [~,foldername_up2,~] = fileparts(folderpath_up1);
-            
-            folders{i} = foldername; %making list of directory names
+		folders = cell(1,numdirs); %preallocating folders cell array
+		dirtype = cell(1,numdirs); %preallocating
+		displaydirs = cell(1,numdirs);
+		for i = 1:numdirs %looping through each selected directory
+			[folderpath,foldername,~] = fileparts(filedirs{i}); %only picking the foldernames for brevity
+			[folderpath_up1,foldername_up1,~] = fileparts(folderpath);
+			[~,foldername_up2,~] = fileparts(folderpath_up1);
+			
+			folders{i} = foldername; %making list of directory names
 			
 			% Different folder connectors for OS types
 			if ispc()
@@ -717,20 +720,29 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				dirtype{i} = 'stack';
 			end
 			
-            displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
+			displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
 			if isempty(displaydirs{i})
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
 			end
 		end
 		
-        set(hlistready,'String',displaydirs);
-        set(hanalyze,'Enable','on');
-        set(hremove,'Enable','on');
+		
+		
+		
+		
+		set(hlistready,'String',displaydirs);
+		set(hanalyze,'Enable','on');
+		set(hremove,'Enable','on');
 		
 		
 		function dirOut = recursive_load(dirIn)
 			dirContents = dir(dirIn);
 			dirContents = dirContents(3:end); %removing '.' and '..'
+			
+			if isempty(dirContents)
+				dirOut = [];
+				return
+			end
 			
 			numDirs = sum([dirContents.isdir]);
 			if numDirs == 0 % Base Case
@@ -743,7 +755,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 						dirOut = [];
 					end
 					
-				elseif numHdr <= 10 % Small/contained number of .hdr files.  10 would be an overly large map
+				elseif numHdr <= 10 && numHdr > 1 % Small/contained number of .hdr files.  10 would be an overly large map
 					cnt = 0;
 					for h = 1:length(dirContents)
 						if contains(dirContents(h).name,'.hdr')
@@ -759,7 +771,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 								
 								if xdiff > 10 || ydiff > 10 % hdr files are too far away from each other to be of the same FOV
 									dirOut = [];
-									break
+									return
 								end
 								
 							end
@@ -779,6 +791,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			end
 			
 		end
+		
 		
 		
 	end
@@ -1135,8 +1148,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 radiosingleval = get(hradiosingle,'Value');
                 radiomultipleval = get(hradiomultiple,'Value');
 				currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
-				currDataInfo = {['# Particles: ' + string(length(currSnew.Size))],['Mean Size: ' + string(mean(currSnew.Size))],['Mean Vol. Frac.: ' + string(mean(currSnew.VolFrac))],['# Energies: ' + string(length(currSnew.eVenergy))]};
+				
 				try
+					currDataInfo = {['# Particles: ' + string(length(currSnew.Size))],['Mean Size: ' + string(mean(currSnew.Size))],['Mean Vol. Frac.: ' + string(mean(currSnew.VolFrac))],['# Energies: ' + string(length(currSnew.eVenergy))]};
 					set(hdatainfo,'String',currDataInfo);
 				catch
 				end
