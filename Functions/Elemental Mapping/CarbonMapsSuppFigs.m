@@ -123,41 +123,16 @@ subdim=ceil(sqrt(length(energy)));
 [~,carboxidx] = ClosestValue(energy, 288.6, [288, 289], 'Error Message', 'missing carbox energy');
 [~,postidx] = ClosestValue(energy, 320, [320, 325], 'Error Message', 'missing post-edge energy');
 
-% [~,sp2idx] = min(abs(energy - 285.4));
-% [~,preidx] = min(abs(energy - 278));
-% [~,carboxidx] = min(abs(energy - 288.6));
-% [~,postidx] = min(abs(energy - 320));
-% 
-% sp2val = energy(sp2idx);
-% preval = energy(preidx);
-% carboxval = energy(carboxidx);
-% postval = energy(postidx);
-% 
-% if sp2val < 284.5 || sp2val > 285.6
-% 	disp('missing sp2 energy');
-% end
-% 
-% if preval <277 || preval > 283
-% 	disp('missing pre-edge energy');
-% end
-% 
-% if carboxval < 288 || carboxval > 289
-% 	disp('missing carbox energy');
-% end
-% 
-% if postval <320 || postval > 325
-% 	disp('missing post-edge energy');
-% end
-
 pre = stack(:,:,preidx);
 sp2im = stack(:,:,sp2idx);
 carboxim = stack(:,:,carboxidx);
 post = stack(:,:,postidx);
 
-pre = FindingTotGradAngle(pre);
-sp2im = FindingTotGradAngle(sp2im);
-carboxim = FindingTotGradAngle(carboxim);
-post = FindingTotGradAngle(post);
+% This background subtraction is a good first step but isn't mature enough as is, plus it takes a long time
+% pre = FindingTotGradAngle(pre);
+% sp2im = FindingTotGradAngle(sp2im);
+% carboxim = FindingTotGradAngle(carboxim);
+% post = FindingTotGradAngle(post);
 
 pre(pre<0) = 0;
 sp2im(sp2im<0) = 0;

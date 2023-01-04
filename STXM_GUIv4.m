@@ -850,7 +850,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		MergingRawSTXMData();
 	end
 
-%% hanalyze runs analysis scripts
+%% hanalyze xxx ANALYSIS HERE xxx runs analysis scripts
     function hanalyze_callback(~,~)
         tic
         readydirs = get(hlistready,'String'); %get directory strings from leftmost (ready) list
@@ -2089,7 +2089,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		set(subhandle{3},'Parent',hpanelmultiple);
 		cbar{3} = colorbar;
 		
-		subhandle{4} =  subplot(2,2,4);
+		
 % 		volfracdist = max(currSnew.VolFrac) - min(currSnew.VolFrac);
 % 		%nhistbins = round(volfracdist./0.05);
 % 		histogram(currSnew.VolFrac,[0:0.05:1]);
@@ -2104,12 +2104,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
 			xbinverts = binctrs{1,1}-xbindist;
 			ybinverts = binctrs{1,2}-ybindist;
-
+			
+			subhandle{4} =  subplot(2,2,4);
 			pcolor(xbinverts, ybinverts, n');
 			axis square
 			xlabel('Particle Size (CED, \mum)');
 			ylabel('Vol. Frac.');
 			title('2D Histogram');
+			set(subhandle{4},'Parent',hpanelmultiple);
 			colormap(subhandle{4},plasma)
 			colorbar
 		catch
