@@ -60,6 +60,14 @@ hroutinepopup = uicontrol(...
     'KeyPressFcn',{@hlistreadykey_callback},...
     'Callback',{@hroutinepopup_callback});
 
+haveragevariable = uicontrol(...
+	'Style','pushbutton',...
+	'String','Average Variable',...
+	'Units','normalized',...
+	'Enable','off',...
+	'Position',[0.01,0.01,0.09,0.05],...
+	'Callback',{@haveragevariable_callback});
+
 
 %% Components in Load and Run screen
 %%%% 
@@ -676,6 +684,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         set(hlistready,'String',displaydirs);
         set(hanalyze,'Enable','on');
         set(hremove,'Enable','on');
+		set(haveragevariable,'Enable','on');
 	end
 
 %% hload_recursive
@@ -733,7 +742,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		set(hlistready,'String',displaydirs);
 		set(hanalyze,'Enable','on');
 		set(hremove,'Enable','on');
-		
+		set(haveragevariable,'Enable','on');
 		
 		function dirOut = recursive_load(dirIn)
 			dirContents = dir(dirIn);
@@ -815,9 +824,36 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		if isempty(readyliststring)
 			set(hremove,'Enable','off');
 			set(hanalyze,'Enable','off');
+			set(haveragevariable,'Enable','off');
 		end
         
-    end
+	end
+
+%% haveragevariable_callback
+	function haveragevariable_callback(~,~)
+		
+		OVFvec = [];
+		Sizevec = [];
+		PartLabelVec = [];
+		CompSizeVec = [];
+		for j = 1:length(filedirs)
+			currSnew = Dataset.(Datasetnames{j}).Snew;
+			OVFvec = [OVFvec; currSnew.VolFrac];
+			Sizevec = [Sizevec, currSnew.Size];
+			PartLabelVec = [PartLabelVec, currSnew.PartLabel];
+			CompSizeVec = [CompSizeVec; currSnew.CompSize];
+		end
+		
+		DataVectors.OVF = OVFvec;
+		DataVectors.Size = Sizevec;
+		DataVectors.PartLabel = PartLabelVec;
+		DataVectors.CompSize = CompSizeVec;
+		
+		assignin('base','DataVectors',DataVectors);
+		
+		
+		
+	end
 
 %% hradiomultiple callback
     function hradiomultiple_callback(~,~)
@@ -851,19 +887,17 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	end
 
 %% hanalyze xxx ANALYSIS HERE xxx runs analysis scripts
-    function hanalyze_callback(~,~)
-        tic
-        readydirs = get(hlistready,'String'); %get directory strings from leftmost (ready) list
-        readylistval = get(hlistready,'Value');
-        usesaveflag = get(husesaved,'Value');
-        usesavedqcflag = get(hqcsaved,'Value');
-        %         dirstorun = get(hlistready,'String');
-        lreadydirs = length(readydirs);
-        foldernames = cell(lreadydirs,1); %preallocation
-        dirstorun = cell(lreadydirs,1); %preallocation
-        %global filedirs
-        filedirs = filedirs'; %this makes it nx1 which is not necessary but makes it easier to work with
-        lfiledirs = length(filedirs);
+	function hanalyze_callback(~,~)
+		tic
+		readydirs = get(hlistready,'String'); %get directory strings from leftmost (ready) list
+		readylistval = get(hlistready,'Value');
+		%         dirstorun = get(hlistready,'String');
+		lreadydirs = length(readydirs);
+		foldernames = cell(lreadydirs,1); %preallocation
+		dirstorun = cell(lreadydirs,1); %preallocation
+		%global filedirs
+		filedirs = filedirs'; %this makes it nx1 which is not necessary but makes it easier to work with
+		lfiledirs = length(filedirs);
 		
 		inorganiclist = get(hassumedinorgpopup,'String');
 		inorganicval = get(hassumedinorgpopup,'Value');
@@ -874,358 +908,385 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		threshMethod_str = get(hthresholding_dropdown,'String');
 		threshMethod_val = get(hthresholding_dropdown,'Value');
 		threshMethod = threshMethod_str{threshMethod_val};
-		        
-        loadobj = findobj('Tag','Load');
-        set(loadobj(:),'Visible','off');
-        
-%         set(hload,'Visible','off')
-%         set(hanalyze,'Visible','off')
-        set(hroutinepopup,'Value',2)
-        set(hradiosingle,'Visible','on')
-        set(hradiomultiple,'Visible','on')
-        set(hpopupimages,'Visible','on');%,'Value',1)
-        
-%         set(hsort,'Visible','off')
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if any(exist('sillystring','file'))
-	hwait = waitbar(0,sillystring);
-else
-	hwait = waitbar(0,'plz w8');
-end
-
-for j = 1:length(filedirs)
-	cd(filedirs{j}); % XXX
-	currdir = dir(filedirs{j});
-	for c = 1:length(currdir)
-		hdridx = strfind(currdir(c).name,'.hdr');
-		if ~isempty(hdridx)
-			fovname{j} = currdir(c).name(1:hdridx-1);
-			break
-		end
-	end
-	
-	cd('..'); % XXX
-	
-	try
-		mapstest = load(['F',fovname{j}],'mapstest');
-	catch
-		mapstest = struct([]);
-	end
-	
-	if usesaveflag == 1
-		Dataset.(currfov).binadjtest = 0;
-		Dataset.(currfov).threshlevel = 2;
-		Dataset.(currfov).savedbinmap = 0;
-		Dataset.(currfov).inorganic = 'NaCl';
-		Dataset.(currfov).organic = 'Sucrose';
 		
-		if hasfield(tempdataset, 'binadjtest')
-			Dataset.(currfov).binadjtest = tempdataset.binadjtest;
-		end
+		loadobj = findobj('Tag','Load');
+		set(loadobj(:),'Visible','off');
 		
-		if hasfield(tempdataset, 'threshlevel')
-			Dataset.(currfov).threshlevel = tempdataset.threshlevel;
-		end
+		%         set(hload,'Visible','off')
+		%         set(hanalyze,'Visible','off')
+		set(hroutinepopup,'Value',2)
+		set(hradiosingle,'Visible','on')
+		set(hradiomultiple,'Visible','on')
+		set(hpopupimages,'Visible','on');%,'Value',1)
 		
-		if hasfield(tempdataset, 'savedbinmap')
-			Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
-		end
+		%         set(hsort,'Visible','off')
 		
-		if hasfield(tempdataset, 'inorganic')
-			Dataset.(currfov).inorganic = tempdataset.inorganic;
-		end
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		
-		if hasfield(tempdataset, 'organic')
-			Dataset.(currfov).organic = tempdataset.organic;
-		end
-		
-	elseif usesavedqcflag == 1
-		beep
-	end
-	
-	if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
-		%[Dataset] = MixingStatesforGUI(dirstorun(j));
-		usesaveflag = 0;
-		usesavedqcflag = 0;
-		continue
-	else                                %Updated CarbonMaps has been run on Jth sample
-		
-		try
-			tempdataset = load(['F',fovname{j}]);
-			[~,tempfov] = fileparts(filedirs{j});
-			currfov = ['FOV',tempfov];
-			Dataset.(currfov).S = tempdataset.S;
-			Dataset.(currfov).Snew = tempdataset.Snew;
-			Dataset.(currfov).Mixing = tempdataset.Mixing;
-			Dataset.(currfov).Particles = tempdataset.Particles;
-			Dataset.(currfov).Directory = tempdataset.datafolder;
-		catch
-			displaydirs = get(hlistready,'String');
-			currdisplaydir = displaydirs{j};
-			currdisplaydir = [currdisplaydir, 'ERROR'];
-			displaydirs{j} = currdisplaydir;
-			set(hlistready,'String',displaydirs);
-			continue
-		end
-		
-		
-		if hasfield(tempdataset, 'binadjtest')
-			Dataset.(currfov).binadjtest = tempdataset.binadjtest;
+		if any(exist('sillystring','file'))
+			hwait = waitbar(0,sillystring);
 		else
-			Dataset.(currfov).binadjtest = 0;
+			hwait = waitbar(0,'plz w8');
 		end
+		hwait.Name = ['Analyzing 1 of ', str(length(filedirs))];
 		
-		if hasfield(tempdataset, 'threshlevel')
-			Dataset.(currfov).threshlevel = tempdataset.threshlevel;
-		else
-			Dataset.(currfov).threshlevel = 2;
-		end
-		
-		if hasfield(tempdataset, 'savedbinmap')
-			Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
-		else
-			Dataset.(currfov).savedbinmap = 0;
-		end
-		
-		if hasfield(tempdataset, 'inorganic')
-			Dataset.(currfov).inorganic = tempdataset.inorganic;
-		else
-			Dataset.(currfov).inorganic = 'NaCl';
-		end
-		
-		if hasfield(tempdataset, 'organic')
-			Dataset.(currfov).organic = tempdataset.organic;
-		else
-			Dataset.(currfov).organic = 'Sucrose';
-		end
-		
-	end
-	
-	waitbar(j/length(filedirs));
-	
-end
-close(hwait);
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if usesaveflag == 1		
-            if any(exist('sillystring','file'))
-                hwait = waitbar(0,sillystring);
-            else
-                hwait = waitbar(0,'plz w8');
-            end
-
-			for j = 1:length(filedirs)
-                cd(filedirs{j}); % XXX
-                currdir = dir(filedirs{j}); 
-                for c = 1:length(currdir)
-                    hdridx = strfind(currdir(c).name,'.hdr');
-                    if ~isempty(hdridx)
-                        fovname{j} = currdir(c).name(1:hdridx-1);
-                        break
-                    end
-                end
-                
-                cd('..'); % XXX
-                
-                try 
-                    mapstest = load(['F',fovname{j}],'mapstest');
-                catch
-                    mapstest = struct([]);
-                end
-                
-                if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
-                    %[Dataset] = MixingStatesforGUI(dirstorun(j));
-                    usesaveflag = 0;
-                    continue
-                else                                %Updated CarbonMaps has been run on Jth sample
-					
-					try
-						tempdataset = load(['F',fovname{j}]);
-						[~,tempfov] = fileparts(filedirs{j});
-						currfov = ['FOV',tempfov];
-						Dataset.(currfov).S = tempdataset.S;
-						Dataset.(currfov).Snew = tempdataset.Snew;
-						Dataset.(currfov).Mixing = tempdataset.Mixing;
-						Dataset.(currfov).Particles = tempdataset.Particles;
-						Dataset.(currfov).Directory = tempdataset.datafolder;
-					catch
-						displaydirs = get(hlistready,'String');
-						currdisplaydir = displaydirs{j};
-						currdisplaydir = [currdisplaydir, 'ERROR'];
-						displaydirs{j} = currdisplaydir;
-						set(hlistready,'String',displaydirs);
-						continue
-					end
-                    
-					
-					if hasfield(tempdataset, 'binadjtest')
-						Dataset.(currfov).binadjtest = tempdataset.binadjtest; 
-					else
-						Dataset.(currfov).binadjtest = 0; 
-					end
-					
-					if hasfield(tempdataset, 'threshlevel')
-						Dataset.(currfov).threshlevel = tempdataset.threshlevel; 
-					else
-						Dataset.(currfov).threshlevel = 2; 
-					end
-					
-					if hasfield(tempdataset, 'savedbinmap')
-						Dataset.(currfov).savedbinmap = tempdataset.savedbinmap; 
-					else
-						Dataset.(currfov).savedbinmap = 0; 
-					end
-					
-					if hasfield(tempdataset, 'inorganic')
-						Dataset.(currfov).inorganic = tempdataset.inorganic; 
-					else
-						Dataset.(currfov).inorganic = 'NaCl'; 
-					end
-					
-					if hasfield(tempdataset, 'organic')
-						Dataset.(currfov).organic = tempdataset.organic; 
-					else
-						Dataset.(currfov).organic = 'Sucrose'; 
-					end
-										
+		for j = 1:length(filedirs)
+			
+			usesaveflag = get(husesaved,'Value');
+			usesavedqcflag = get(hqcsaved,'Value');
+			cd(filedirs{j}); % XXX
+			currdir = dir(filedirs{j});
+			for c = 1:length(currdir)
+				hdridx = strfind(currdir(c).name,'.hdr');
+				if ~isempty(hdridx)
+					fovname{j} = currdir(c).name(1:hdridx-1);
+					break
 				end
-				waitbar(j/length(filedirs));
-				
 			end
-            close(hwait);
-            %load stuff
-            %check for mapstest
-            %use or rerun
-%             load()
-
-        elseif usesavedqcflag == 1
-            if any(exist('sillystring','file'))
-                hwait = waitbar(0,sillystring);
-            else
-                hwait = waitbar(0,'plz w8');
-            end
-            
-            for j = 1:length(filedirs)
-                cd(filedirs{j});
-                currdir = dir;
-                for c = 1:length(currdir)
-                    hdridx = strfind(currdir(c).name,'.hdr');
-                    if ~isempty(hdridx)
-                        fovname{j} = currdir(c).name(1:hdridx-1);
-                        break
-                    end
-                end
-                
-                cd('..');
-                
-                try 
-                    mapstest = load(['F',fovname{j}],'mapstest');
-                catch
-                    mapstest = struct([]);
-                end
-                
-                try%%%%%%<<<<<<<<<<<<<<<<<<<<<< 
-                    threshlevel = load(['F',fovname{j}],'threshlevel');
-                    threshfieldnames = fieldnames(threshlevel);
-                    if isempty(threshfieldnames)
-                        threshlevel = 2;
-                    else
-                        threshlevel = threshlevel.(threshfieldnames{1});
-                    end
-                catch
-                    threshlevel = 2;
-                end
-                
-                try
-                    binadjtest = load(['F',fovname{j}],'binadjtest');
-                    binfieldnames = fieldnames(binadjtest);
-                    if isempty(binfieldnames)
-                        binadjtest = 0;
-                    else
-                        binadjtest = binadjtest.(binfieldnames{1});
-                    end
-                catch
-                    binadjtest = 0;
-                end
-                
-                try
-                    savedbinmap = load(['F',fovname{j}],'savedbinmap');
-                    savedbinmapfieldnames = fieldnames(savedbinmap);
-                    if isempty(savedbinmapfieldnames)
-                        savedbinmap = 0;
-                    else
-                        savedbinmap = savedbinmap.(savedbinmapfieldnames{1});
-                    end
-                catch
-                    savedbinmap = 0;
-                end
-                
-                
-                if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
-                    %[Dataset] = MixingStatesforGUI(dirstorun(j));
-                    usesavedqcflag = 0;
-                    break
-                else                                %Updated CarbonMaps has been run on Jth sample
-                    [Dataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);
-                    %tempdataset = load(['F',fovname{j}]);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    %[~,tempfov] = fileparts(dirstorun{j});
-                    %currfov = ['FOV',tempfov];
-                    %Dataset.(currfov).S = tempdataset.S;
-                    %Dataset.(currfov).Snew = tempdataset.Snew;
-                    %Dataset.(currfov).Mixing = tempdataset.Mixing;
-                    %Dataset.(currfov).Particles = tempdataset.Particles;
-                    %Dataset.(currfov).Directory = tempdataset.datafolder;
-                       
-                end
-                    waitbar(j/length(filedirs));
-
-            end
-            close(hwait);
+			
+			cd('..'); % XXX
+			
+			try
+				mapstest = load(['F',fovname{j}],'mapstest');
+			catch
+				disp(['no saved data for ' , fovname{j}]);
+				usesaveflag = 0;
+				usesavedqcflag = 0;
+			end
+			
+			
+			
+			if usesaveflag == 1
+				
+				try
+					tempdataset = load(['F',fovname{j}]);
+					[~,tempfov] = fileparts(filedirs{j});
+					currfov = ['FOV',tempfov];
+					Dataset.(currfov).S = tempdataset.S;
+					Dataset.(currfov).Snew = tempdataset.Snew;
+					Dataset.(currfov).Mixing = tempdataset.Mixing;
+					Dataset.(currfov).Particles = tempdataset.Particles;
+					Dataset.(currfov).Directory = tempdataset.datafolder;
+					Dataset.(currfov).Snew.elements = tempdataset.Snew.elements;
+					Dataset.(currfov).Snew.RGBCompMap = tempdataset.Snew.RGBCompMap;
+					Dataset.(currfov).Snew.Maps = tempdataset.Snew.Maps;
+					Dataset.(currfov).Snew.LabelMat = tempdataset.Snew.LabelMat;
+					Dataset.(currfov).Snew.VolFrac = tempdataset.Snew.VolFrac;
+					Dataset.(currfov).Snew.Size = tempdataset.Snew.Size;
+					Dataset.(currfov).Snew.PartLabel = tempdataset.Snew.PartLabel;
+					Dataset.(currfov).Snew.CompSize = tempdataset.Snew.CompSize;
+					
+				catch
+					usesaveflag = 0;
+% 					displaydirs = get(hlistready,'String');
+% 					currdisplaydir = displaydirs{j};
+% 					currdisplaydir = [currdisplaydir, 'ERROR'];
+% 					displaydirs{j} = currdisplaydir;
+% 					set(hlistready,'String',displaydirs);
+					continue
+				end
+				
+				% Defaults
+				Dataset.(currfov).binadjtest = 0;
+				Dataset.(currfov).threshlevel = 2;
+				Dataset.(currfov).savedbinmap = 0;
+				Dataset.(currfov).inorganic = 'NaCl';
+				Dataset.(currfov).organic = 'Sucrose';
+				
+				% Pulling numbers if already defined
+				if hasfield(tempdataset, 'binadjtest',1)
+					Dataset.(currfov).binadjtest = tempdataset.binadjtest;
+				end
+				
+				if hasfield(tempdataset, 'threshlevel',1)
+					Dataset.(currfov).threshlevel = tempdataset.threshlevel;
+				end
+				
+				if hasfield(tempdataset, 'savedbinmap',1)
+					Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
+				end
+				
+				if hasfield(tempdataset, 'inorganic',1)
+					Dataset.(currfov).inorganic = tempdataset.inorganic;
+				end
+				
+				if hasfield(tempdataset, 'organic',1)
+					Dataset.(currfov).organic = tempdataset.organic;
+				end
+				
+			elseif usesavedqcflag == 1
+				try%%%%%%<<<<<<<<<<<<<<<<<<<<<<
+					threshlevel = load(['F',fovname{j}],'threshlevel');
+					threshfieldnames = fieldnames(threshlevel);
+					if isempty(threshfieldnames)
+						threshlevel = 2;
+					else
+						threshlevel = threshlevel.(threshfieldnames{1});
+					end
+				catch
+					threshlevel = 2;
+				end
+				
+				try
+					binadjtest = load(['F',fovname{j}],'binadjtest');
+					binfieldnames = fieldnames(binadjtest);
+					if isempty(binfieldnames)
+						binadjtest = 0;
+					else
+						binadjtest = binadjtest.(binfieldnames{1});
+					end
+				catch
+					binadjtest = 0;
+				end
+				
+				try
+					savedbinmap = load(['F',fovname{j}],'savedbinmap');
+					savedbinmapfieldnames = fieldnames(savedbinmap);
+					if isempty(savedbinmapfieldnames)
+						savedbinmap = 0;
+					else
+						savedbinmap = savedbinmap.(savedbinmapfieldnames{1});
+					end
+				catch
+					savedbinmap = 0;
+				end
+				
+				[Dataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);				
+			end
+			
+			if usesaveflag == 0 && usesavedqcflag == 0
+				disp(threshMethod);
+				[Dataset] = MixingStatesforGUI(filedirs(j),'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+			end
+			
+			hwait.Name = ['Analyzing ', str(j),' of ', str(length(filedirs))];
+			waitbar(j/length(filedirs));
+			
 		end
-        
-		if usesaveflag == 0 && usesavedqcflag == 0
-			disp(threshMethod);
-			[Dataset] = MixingStatesforGUI(filedirs,'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
-		end
-        
-        Datasetnames = fieldnames(Dataset);
-        
-       
-        set(hplottitle,'String',(Datasetnames{1}))
-        set(hpanelmultiple,'Visible','on');
-
-        set(hstacklabtitle,'String',(Datasetnames{1}));
-        set(hlistready,'Max',1,'Value',readylistval(1));
-        
-        dataviewerobj = findobj('Tag','DataViewer');
-        set(dataviewerobj,'Visible','on');
-        set(hleft,'Visible','off');
-        set(hright,'Visible','off');
-        
-        
-        currSnew = Dataset.(Datasetnames{1}).Snew;
-        currelements= fieldnames(currSnew.elements);
+		close(hwait);
 		
-        cnt = 0;
-        for i = 1:length(heleboxlist)
-            if currSnew.elements.(currelements{i}) == 1
-                set(heleboxlist{i},'Value',1);
-                cnt = cnt + 1;
-            end
-            
-            if cnt == 4
-                break
-            end
-        end
-        
-        hselect_callback();
-        set(husesaved,'Value',1);
-        analyzeruntest = 1;
-        toc
-    end
+		
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		%         if usesaveflag == 1
+		%             if any(exist('sillystring','file'))
+		%                 hwait = waitbar(0,sillystring);
+		%             else
+		%                 hwait = waitbar(0,'plz w8');
+		%             end
+		%
+		% 			for j = 1:length(filedirs)
+		%                 cd(filedirs{j}); % XXX
+		%                 currdir = dir(filedirs{j});
+		%                 for c = 1:length(currdir)
+		%                     hdridx = strfind(currdir(c).name,'.hdr');
+		%                     if ~isempty(hdridx)
+		%                         fovname{j} = currdir(c).name(1:hdridx-1);
+		%                         break
+		%                     end
+		%                 end
+		%
+		%                 cd('..'); % XXX
+		%
+		%                 try
+		%                     mapstest = load(['F',fovname{j}],'mapstest');
+		%                 catch
+		%                     mapstest = struct([]);
+		%                 end
+		%
+		%                 if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
+		%                     %[Dataset] = MixingStatesforGUI(dirstorun(j));
+		%                     usesaveflag = 0;
+		%                     continue
+		%                 else                                %Updated CarbonMaps has been run on Jth sample
+		%
+		% 					try
+		% 						tempdataset = load(['F',fovname{j}]);
+		% 						[~,tempfov] = fileparts(filedirs{j});
+		% 						currfov = ['FOV',tempfov];
+		% 						Dataset.(currfov).S = tempdataset.S;
+		% 						Dataset.(currfov).Snew = tempdataset.Snew;
+		% 						Dataset.(currfov).Mixing = tempdataset.Mixing;
+		% 						Dataset.(currfov).Particles = tempdataset.Particles;
+		% 						Dataset.(currfov).Directory = tempdataset.datafolder;
+		% 					catch
+		% 						displaydirs = get(hlistready,'String');
+		% 						currdisplaydir = displaydirs{j};
+		% 						currdisplaydir = [currdisplaydir, 'ERROR'];
+		% 						displaydirs{j} = currdisplaydir;
+		% 						set(hlistready,'String',displaydirs);
+		% 						continue
+		% 					end
+		%
+		%
+		% 					if hasfield(tempdataset, 'binadjtest')
+		% 						Dataset.(currfov).binadjtest = tempdataset.binadjtest;
+		% 					else
+		% 						Dataset.(currfov).binadjtest = 0;
+		% 					end
+		%
+		% 					if hasfield(tempdataset, 'threshlevel')
+		% 						Dataset.(currfov).threshlevel = tempdataset.threshlevel;
+		% 					else
+		% 						Dataset.(currfov).threshlevel = 2;
+		% 					end
+		%
+		% 					if hasfield(tempdataset, 'savedbinmap')
+		% 						Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
+		% 					else
+		% 						Dataset.(currfov).savedbinmap = 0;
+		% 					end
+		%
+		% 					if hasfield(tempdataset, 'inorganic')
+		% 						Dataset.(currfov).inorganic = tempdataset.inorganic;
+		% 					else
+		% 						Dataset.(currfov).inorganic = 'NaCl';
+		% 					end
+		%
+		% 					if hasfield(tempdataset, 'organic')
+		% 						Dataset.(currfov).organic = tempdataset.organic;
+		% 					else
+		% 						Dataset.(currfov).organic = 'Sucrose';
+		% 					end
+		%
+		% 				end
+		% 				waitbar(j/length(filedirs));
+		%
+		% 			end
+		%             close(hwait);
+		%             %load stuff
+		%             %check for mapstest
+		%             %use or rerun
+		%             load()
+		%
+		%         elseif usesavedqcflag == 1
+		%             if any(exist('sillystring','file'))
+		%                 hwait = waitbar(0,sillystring);
+		%             else
+		%                 hwait = waitbar(0,'plz w8');
+		%             end
+		%
+		%             for j = 1:length(filedirs)
+		%                 cd(filedirs{j});
+		%                 currdir = dir;
+		%                 for c = 1:length(currdir)
+		%                     hdridx = strfind(currdir(c).name,'.hdr');
+		%                     if ~isempty(hdridx)
+		%                         fovname{j} = currdir(c).name(1:hdridx-1);
+		%                         break
+		%                     end
+		%                 end
+		%
+		%                 cd('..');
+		%
+		%                 try
+		%                     mapstest = load(['F',fovname{j}],'mapstest');
+		%                 catch
+		%                     mapstest = struct([]);
+		%                 end
+		%
+		%                 try%%%%%%<<<<<<<<<<<<<<<<<<<<<<
+		%                     threshlevel = load(['F',fovname{j}],'threshlevel');
+		%                     threshfieldnames = fieldnames(threshlevel);
+		%                     if isempty(threshfieldnames)
+		%                         threshlevel = 2;
+		%                     else
+		%                         threshlevel = threshlevel.(threshfieldnames{1});
+		%                     end
+		%                 catch
+		%                     threshlevel = 2;
+		%                 end
+		%
+		%                 try
+		%                     binadjtest = load(['F',fovname{j}],'binadjtest');
+		%                     binfieldnames = fieldnames(binadjtest);
+		%                     if isempty(binfieldnames)
+		%                         binadjtest = 0;
+		%                     else
+		%                         binadjtest = binadjtest.(binfieldnames{1});
+		%                     end
+		%                 catch
+		%                     binadjtest = 0;
+		%                 end
+		%
+		%                 try
+		%                     savedbinmap = load(['F',fovname{j}],'savedbinmap');
+		%                     savedbinmapfieldnames = fieldnames(savedbinmap);
+		%                     if isempty(savedbinmapfieldnames)
+		%                         savedbinmap = 0;
+		%                     else
+		%                         savedbinmap = savedbinmap.(savedbinmapfieldnames{1});
+		%                     end
+		%                 catch
+		%                     savedbinmap = 0;
+		%                 end
+		%
+		%
+		%                 if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
+		%                     %[Dataset] = MixingStatesforGUI(dirstorun(j));
+		% %                     usesavedqcflag = 0;
+		% %                     break
+		%                 else                                %Updated CarbonMaps has been run on Jth sample
+		%                     [Dataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);
+		%                     %tempdataset = load(['F',fovname{j}]);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		%                     %[~,tempfov] = fileparts(dirstorun{j});
+		%                     %currfov = ['FOV',tempfov];
+		%                     %Dataset.(currfov).S = tempdataset.S;
+		%                     %Dataset.(currfov).Snew = tempdataset.Snew;
+		%                     %Dataset.(currfov).Mixing = tempdataset.Mixing;
+		%                     %Dataset.(currfov).Particles = tempdataset.Particles;
+		%                     %Dataset.(currfov).Directory = tempdataset.datafolder;
+		%
+		%                 end
+		%                     waitbar(j/length(filedirs));
+		%
+		%             end
+		%             close(hwait);
+		% 		end
+		%
+		% 		if usesaveflag == 0 && usesavedqcflag == 0
+		% 			disp(threshMethod);
+		% 			[Dataset] = MixingStatesforGUI(filedirs,'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+		% 		end
+		
+		if ~isempty(Dataset)
+			Datasetnames = fieldnames(Dataset);
+			
+			
+			set(hplottitle,'String',(Datasetnames{1}))
+			set(hpanelmultiple,'Visible','on');
+			
+			set(hstacklabtitle,'String',(Datasetnames{1}));
+			set(hlistready,'Max',1,'Value',readylistval(1));
+			
+			dataviewerobj = findobj('Tag','DataViewer');
+			set(dataviewerobj,'Visible','on');
+			set(hleft,'Visible','off');
+			set(hright,'Visible','off');
+			
+			
+			currSnew = Dataset.(Datasetnames{1}).Snew;
+			currelements= fieldnames(currSnew.elements);
+			
+			cnt = 0;
+			for i = 1:length(heleboxlist)
+				if currSnew.elements.(currelements{i}) == 1
+					set(heleboxlist{i},'Value',1);
+					cnt = cnt + 1;
+				end
+				
+				if cnt == 4
+					break
+				end
+			end
+			
+			hselect_callback();
+			set(husesaved,'Value',1);
+			analyzeruntest = 1;
+		else
+			disp('NO VALID DATA FOUND');
+		end
+		toc
+	end
 
 %% hselect dropdown menu
     function hselect_callback(~,~)
