@@ -9,7 +9,7 @@ end
 %% Determining closest energy value
 energy = Snew.eVenergy;
 
-[~, capreidx] = ClosestValue(energy, 347, [340, 349],'Error Message','Missing Ca pre-edge energy');
+[~, capreidx] = ClosestValue(energy, 347, [340, 349.5],'Error Message','Missing Ca pre-edge energy');
 [~, capostidx] = ClosestValue(energy, 352.5, [350, 355],'Error Message','Missing Ca post-edge energy');
 
 %% Simple Ca map definition
