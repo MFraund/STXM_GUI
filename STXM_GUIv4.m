@@ -759,9 +759,24 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				numXim = count([dirContents.name], '.xim');
 				if numHdr == 1 % Only 1 hdr file
 					if numXim > 1 %and many images
-						dirOut = dirIn;
+						
+						for h = 1:length(dirContents)
+							if contains(dirContents(h).name,'.hdr')
+								hdrFile = fullfile(dirContents(h).folder, dirContents(h).name);
+								[eVenergy] = ReadHdrMulti(hdrFile);
+								break
+							end
+						end
+						
+						if length(eVenergy) == numXim
+							dirOut = dirIn;
+						else
+							dirOut = [];
+							return
+						end
 					else %and no images (error) or only one image (standalone hdr/xim pair)
 						dirOut = [];
+						return
 					end
 					
 				elseif numHdr <= 10 && numHdr > 1 % Small/contained number of .hdr files.  10 would be an overly large map
@@ -790,10 +805,15 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 					end
 				else % many more hdr files than in a map, this must be just a collection of images
 					dirOut = [];
+					return
 				end
 			elseif numDirs > 0 %If folders are present, it's not a data set
 				nestDirs = dirContents([dirContents.isdir]);
 				for d = 1:numDirs
+					if contains(nestDirs(d).name,'BadFiles')
+						dirOut{d} = [];
+						continue
+					end
 					currNestDir = fullfile(nestDirs(d).folder, nestDirs(d).name);
 					dirOut{d} = recursive_load(currNestDir);
 				end
@@ -928,9 +948,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		else
 			hwait = waitbar(0,'plz w8');
 		end
-		hwait.Name = ['Analyzing 1 of ', str(length(filedirs))];
+		hwait.Name = ['Analyzing 1 of ', str(lfiledirs)];
 		
-		for j = 1:length(filedirs)
+		for j = 1:lfiledirs
 			
 			usesaveflag = get(husesaved,'Value');
 			usesavedqcflag = get(hqcsaved,'Value');
@@ -983,7 +1003,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 % 					currdisplaydir = [currdisplaydir, 'ERROR'];
 % 					displaydirs{j} = currdisplaydir;
 % 					set(hlistready,'String',displaydirs);
-					continue
 				end
 				
 				% Defaults
@@ -1059,8 +1078,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				[Dataset] = MixingStatesforGUI(filedirs(j),'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
 			end
 			
-			hwait.Name = ['Analyzing ', str(j),' of ', str(length(filedirs))];
-			waitbar(j/length(filedirs));
+			hwait.Name = ['Analyzing ', str(j),' of ', str(lfiledirs)];
+			disp(j);
+			waitbar(j/lfiledirs);
 			
 		end
 		close(hwait);
@@ -3058,7 +3078,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% run cleanup code when figure is closed
     function figureclose_callback(~,~)
-        clear('Dataset');
+        clear('Dataset', 'filedirs', 'Datasetnames');
         clear global
         delete(f);      
 	end
