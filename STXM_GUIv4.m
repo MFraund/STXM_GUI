@@ -25,7 +25,7 @@ f = figure(...
 %================================================================
 
 %%%%
-%%%% Components Always Visible
+%% Components Always Visible
 %%%%
 
 hremove = uicontrol(...
@@ -51,14 +51,22 @@ hlistready = uicontrol(...
     'Callback',{@hlistready_callback},...
     'Position',[0.01,0.07,0.3,0.8]);
 
+% Analysis Window Type
+routineString = {...
+	'Load & Run Data',...
+	'Data Viewer',...
+	'StackLab',...
+	'EDXmapview'};
 
 hroutinepopup = uicontrol(...
     'Style','popupmenu',...
-    'String',{'Load & Run Data','Data Viewer','StackLab','EDXmapview'},...
+    'String',routineString,...
     'Units','normalized',...
     'Position',[0.01,0.93,0.1,0.053],...
     'KeyPressFcn',{@hlistreadykey_callback},...
     'Callback',{@hroutinepopup_callback});
+
+
 
 haveragevariable = uicontrol(...
 	'Style','pushbutton',...
@@ -639,7 +647,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %% ================== Programming Callbacks =======================
 %======================================================================
 
-%% hload callback
+%% Load Files
     function hload_callback(~,~)
 %         filedirs = uipickfiles; %calls up gui to pick multiple directories
 		filedirs = pickFileDirs(filedirs);
@@ -687,7 +695,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		set(haveragevariable,'Enable','on');
 	end
 
-%% hload_recursive
+%% Recursive Load
 	function hload_recursive_callback(~,~)
 		startDir = uipickfiles(...
 			'REFilter','\.removefilesfromlist$',...
@@ -825,7 +833,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 	end
 
-%% hremove callback
+%% Remove Files
 %hremove button moves data from "ready list" to "load list" This is EXACTLY
 %the same as hadd with the listbox 'String' and 'Values' switched
     function hremove_callback(~,~)
@@ -849,7 +857,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
 	end
 
-%% haveragevariable_callback
+%% Average Variables Button
 	function haveragevariable_callback(~,~)
 		
 		OVFvec = [];
@@ -895,7 +903,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
     end
 
-%% hsort runs stxmsort on a single directory containing all stxm files
+%% stxmsort - hsort runs stxmsort on a single directory containing all stxm files
 %pertaining to a single experiment
     function hsort_callback(~,~)
         stxmsort();
@@ -906,7 +914,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		MergingRawSTXMData();
 	end
 
-%% hanalyze xxx ANALYSIS HERE xxx runs analysis scripts
+%% ---------- hanalyze xxx ANALYSIS HERE xxx runs analysis scripts -----------
 	function hanalyze_callback(~,~)
 		tic
 		readydirs = get(hlistready,'String'); %get directory strings from leftmost (ready) list
@@ -950,6 +958,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		end
 		hwait.Name = ['Analyzing 1 of ', str(lfiledirs)];
 		
+		removelist = [];
+		
 		for j = 1:lfiledirs
 			
 			usesaveflag = get(husesaved,'Value');
@@ -974,14 +984,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				usesavedqcflag = 0;
 			end
 			
-			
+			[~,tempfov] = fileparts(filedirs{j});
+			currfov = ['FOV',tempfov];
 			
 			if usesaveflag == 1
 				
 				try
 					tempdataset = load(['F',fovname{j}]);
-					[~,tempfov] = fileparts(filedirs{j});
-					currfov = ['FOV',tempfov];
 					Dataset.(currfov).S = tempdataset.S;
 					Dataset.(currfov).Snew = tempdataset.Snew;
 					Dataset.(currfov).Mixing = tempdataset.Mixing;
@@ -1070,20 +1079,32 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 					savedbinmap = 0;
 				end
 				
-				[Dataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);				
+				[tempdataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);				
+				Dataset.(currfov) = tempdataset.(currfov);
 			end
 			
 			if usesaveflag == 0 && usesavedqcflag == 0
 				disp(threshMethod);
-				[Dataset] = MixingStatesforGUI(filedirs(j),'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+				[tempdataset] = MixingStatesforGUI(filedirs(j),'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+				if tempdataset.(currfov).Snew.elements.C == 0
+					removelist = [removelist, j];
+					Dataset = rmfield(Dataset,currfov);
+				else
+					Dataset.(currfov) = tempdataset.(currfov);
+				end
 			end
 			
-			hwait.Name = ['Analyzing ', str(j),' of ', str(lfiledirs)];
+			hwait.Name = ['Analyzing ', str(j+1),' of ', str(lfiledirs)];
 			disp(j);
 			waitbar(j/lfiledirs);
 			
 		end
 		close(hwait);
+		
+		
+		filedirs(removelist) = [];
+		readydirs(removelist) = [];
+		set(hlistready,'String',readydirs);
 		
 		
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2290,12 +2311,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			ybinverts = binctrs{1,2}-ybindist;
 			
 			subhandle{4} =  subplot(2,2,4);
-			pcolor(xbinverts, ybinverts, n');
+			imagesc(xbinverts, ybinverts, n');
 			axis square
 			xlabel('Particle Size (CED, \mum)');
 			ylabel('Vol. Frac.');
 			title('2D Histogram');
 			set(subhandle{4},'Parent',hpanelmultiple);
+			set(gca,'YDir','normal');
 			colormap(subhandle{4},plasma)
 			colorbar
 		catch

@@ -1,4 +1,4 @@
-function [ Dataset ] = MixingStatesforGUI( filedirs, varargin)
+function [ Dataset_out ] = MixingStatesforGUI( filedirs, varargin)
 %MIXINGSTATESFORGUI [ MixingOverview,MixStateStats,ParticlesOverview ] = MixingStatesforGUI( filedirs )
 %Determination of simple statistics about mixing state and mass fractions
 %Code by Matthew Fraund 5/19/15 @ University of the Pacific
@@ -50,7 +50,7 @@ for i = 1:ldirs
 end
 
 %% Preallocating
-Dataset = cell2struct(emptycell,dirnames,1);
+Dataset_out = cell2struct(emptycell,dirnames,1);
 ParticlesOverview = zeros(1,ldirs);
 MixingOverview = zeros(1,ldirs);
 
@@ -89,21 +89,21 @@ for i = 1:ldirs %looping through each selected directory
 		'Thresh Method',threshMethod...
 		);
 
-	Dataset.(dirnames{i}).S = S;
-	Dataset.(dirnames{i}).Snew = Snew;
-	Dataset.(dirnames{i}).Mixing = Mixing;
-	Dataset.(dirnames{i}).Particles = Particles;
-	Dataset.(dirnames{i}).Directory = filedirs{i};
+	Dataset_out.(dirnames{i}).S = S;
+	Dataset_out.(dirnames{i}).Snew = Snew;
+	Dataset_out.(dirnames{i}).Mixing = Mixing;
+	Dataset_out.(dirnames{i}).Particles = Particles;
+	Dataset_out.(dirnames{i}).Directory = filedirs{i};
 %     MixingOverview(1,i).DataSet = tempfiledir;
 %     MixingOverview(1,i).Mixing = Mixing;
 %     MixingOverview(1,i).Mixing.Numparticles = length(Mixing.Di);
 	if Mixing == 0
 		
 	else
-		tempDa(i) = Dataset.(dirnames{i}).Mixing.Da;
-		tempDy(i) = Dataset.(dirnames{i}).Mixing.Dy;
-		tempDb(i) = Dataset.(dirnames{i}).Mixing.Db;
-		tempCHI(i) = Dataset.(dirnames{i}).Mixing.MixStateChi;
+		tempDa(i) = Dataset_out.(dirnames{i}).Mixing.Da;
+		tempDy(i) = Dataset_out.(dirnames{i}).Mixing.Dy;
+		tempDb(i) = Dataset_out.(dirnames{i}).Mixing.Db;
+		tempCHI(i) = Dataset_out.(dirnames{i}).Mixing.MixStateChi;
 	end
     waitbar(i/ldirs);
 %     ParticlesOverview(1,i).Particles = Particles;
@@ -120,11 +120,11 @@ else
 	
 	MixStateStats = struct('DaStats',DaStats,'DyStats',DyStats,'DbStats',DbStats,'ChiStats',ChiStats);
 	
-	Dataset.MixStateStats = MixStateStats;
+	Dataset_out.MixStateStats = MixStateStats;
 end
 
-totalmfrac = extractingmfracGUI(Dataset);
-Dataset.totalmfrac = totalmfrac;
+% totalmfrac = extractingmfracGUI(Dataset_out);
+% Dataset_out.totalmfrac = totalmfrac;
 % Dataset.ParticlesOverview = ParticlesOverview;
 % Dataset.MixingOverview = MixingOverview;
 
