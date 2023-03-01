@@ -743,10 +743,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			end
 		end
 		
-		
-		
-		
-		
 		set(hlistready,'String',displaydirs);
 		set(hanalyze,'Enable','on');
 		set(hremove,'Enable','on');
@@ -805,7 +801,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 									dirOut = [];
 									return
 								end
-								
 							end
 						else
 							dirOut = dirIn;
@@ -826,7 +821,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 					dirOut{d} = recursive_load(currNestDir);
 				end
 			end
-			
 		end
 		
 		
@@ -3070,6 +3064,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 		if nargin == 0
 			filedirs_in = [];
+		end
+		
+		% Making sure input filecell is a row vector
+		if size(filedirs_in,1) > 1 && size(filedirs_in,2) == 1
+			filedirs_in = filedirs_in';
 		end
 		
 		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr','Append',filedirs_in);
