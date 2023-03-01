@@ -3066,30 +3066,30 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	end
 
 %% Picking files but ensuring no duplicates
-	function filedirs = pickFileDirs(filedirs)
+	function filedirs_in = pickFileDirs(filedirs_in)
 		
 		if nargin == 0
-			filedirs = [];
+			filedirs_in = [];
 		end
 		
-		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr','Append',filedirs);
+		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr','Append',filedirs_in);
 		
 		if ~iscell(newfiledirs) % If user presses cancel button
 			return;
 		end
 		
 		lnfdirs = length(newfiledirs);
-		lofdirs = length(filedirs);
+		lofdirs = length(filedirs_in);
 		remove_list = [];
 		for n = 1:lnfdirs
 			for o = 1:lofdirs
-				if strcmp(newfiledirs{n},filedirs{o})
+				if strcmp(newfiledirs{n},filedirs_in{o})
 					remove_list = [remove_list, n];
 				end
 			end
 		end
 		newfiledirs(remove_list) = [];
-		filedirs = [filedirs, newfiledirs];
+		filedirs_in = [filedirs_in, newfiledirs];
 		
 	end
 
