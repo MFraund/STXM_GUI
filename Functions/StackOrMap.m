@@ -7,6 +7,10 @@ if iscell(dirPath) && length(dirPath) == 1
 	dirPath = dirPath{1};
 end
 
+if ~isfolder(dirPath)
+	%TODO add a short circuit if it's a single .hdr file
+end
+
 dirContents = dir(dirPath);
 
 hdrcnt = 0;
@@ -36,6 +40,7 @@ end
 if hdrcnt == 0
 	disp('no hdr file');
 	disp(dirPath);
+	dirLabel = 'Empty';
 end
 
 end
