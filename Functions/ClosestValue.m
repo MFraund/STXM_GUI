@@ -19,7 +19,7 @@ function [closestVal, closestIdx] = ClosestValue(vector, value, bounds, varargin
 % >> 2
 %
 % ClosestValue(TestVector, 2.51)
-% >> 2
+% >> 3
 %
 % ClosestValue(TestVector, 0)
 % >> 1
@@ -31,9 +31,10 @@ function [closestVal, closestIdx] = ClosestValue(vector, value, bounds, varargin
 % >> NaN
 % >> Out of Bounds
 %
-% ClosestValue(TestVector, -1000, 0, 'Cool Message')
-% >> NaN
+% ClosestValue(TestVector, -1000, 0, 'Error Message', 'Cool Message')
 % >> Cool Message
+% >> NaN
+% 
 
 %% Extracting inputs
 [varargin,errMsg] = ExtractVararginValue(varargin,'Error Message','Out of Bounds');
