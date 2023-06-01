@@ -45,6 +45,16 @@ if nargin < 3
 	bounds = inf;
 end
 
+if iscell(vector)
+	if length(vector) > 1
+		disp('Cell vector has more than one entry, attempting to use first cell Size = ');
+		size(vector)
+	end
+	
+	vector = vector{1};
+	
+end
+
 % Accounting for single bound given and for more than 2 bounds given
 if length(bounds) == 1
 	lowerBound = value - bounds; 
