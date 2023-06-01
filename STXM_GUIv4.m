@@ -165,6 +165,12 @@ hassumedorgpopup = uicontrol(...
 	'String',{'sucrose','adipic','glucose','oxalic'},...
 	'Tag','Load');
 
+hloadmaps = uicontrol(...
+	'Style','popupmenu',...
+	'Units','normalized',...
+	'Position',[0.32, 0.75',0.1, 0.05],...
+	'String',{'Load all (default)','Only Maps','Only Spectra'},...
+	'Tag','Load');
 
 
 
@@ -659,7 +665,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         folders = cell(1,numdirs); %preallocating folders cell array
         dirtype = cell(1,numdirs); %preallocating
         displaydirs = cell(1,numdirs);
-        for i = 1:numdirs %looping through each selected directory
+		for i = 1:numdirs %looping through each selected directory
             [folderpath,foldername,~] = fileparts(filedirs{i}); %only picking the foldernames for brevity
             [folderpath_up1,foldername_up1,~] = fileparts(folderpath);
             [~,foldername_up2,~] = fileparts(folderpath_up1);
@@ -688,6 +694,19 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
 			end
 		end
+		
+		loadstr = get(hloadmaps, 'String');
+		loadval = get(hloadmaps, 'Value');
+		loadtype = loadstr{loadval};
+		
+		if contains(loadtype, 'maps', 'IgnoreCase', true)
+			removelist_boolvec = contains(dirtype, 'map');
+			displaydirs(removelist_boolvec) = [];
+		elseif contains(loadtype, 'spectra', 'IgnoreCase',true)
+			removelist_boolvec = contains(dirtype, 'stack');
+			displaydirs(removelist_boolvec) = [];
+		end
+		
 		
         set(hlistready,'String',displaydirs);
         set(hanalyze,'Enable','on');
@@ -741,6 +760,21 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			if isempty(displaydirs{i})
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
 			end
+			
+		end
+		
+		
+		
+		loadstr = get(hloadmaps, 'String');
+		loadval = get(hloadmaps, 'Value');
+		loadtype = loadstr{loadval};
+		
+		if contains(loadtype, 'maps', 'IgnoreCase', true)
+			removelist_boolvec = contains(dirtype, 'stack');
+			displaydirs(removelist_boolvec) = [];
+		elseif contains(loadtype, 'spectra', 'IgnoreCase',true)
+			removelist_boolvec = contains(dirtype, 'map');
+			displaydirs(removelist_boolvec) = [];
 		end
 		
 		set(hlistready,'String',displaydirs);
