@@ -768,14 +768,16 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		loadstr = get(hloadmaps, 'String');
 		loadval = get(hloadmaps, 'Value');
 		loadtype = loadstr{loadval};
-		
 		if contains(loadtype, 'maps', 'IgnoreCase', true)
 			removelist_boolvec = contains(dirtype, 'stack');
-			displaydirs(removelist_boolvec) = [];
 		elseif contains(loadtype, 'spectra', 'IgnoreCase',true)
 			removelist_boolvec = contains(dirtype, 'map');
-			displaydirs(removelist_boolvec) = [];
+		else
+			removelist_boolvec = [];
 		end
+		
+		displaydirs(removelist_boolvec) = [];
+		filedirs(removelist_boolvec) = [];
 		
 		set(hlistready,'String',displaydirs);
 		set(hanalyze,'Enable','on');
@@ -872,6 +874,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		% Removing chosen value
         readyliststring(readylistvalue) = [];
 		filedirs(readylistvalue) = [];
+		Dataset = rmfield(Dataset, Datasetnames{readylistvalue});
+		Datasetnames(readylistvalue) = [];
 		
 		% Setting new string and ensuring a non-existent value isn't selected
         set(hlistready,'String',readyliststring,'Value',1);
@@ -881,6 +885,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			set(hremove,'Enable','off');
 			set(hanalyze,'Enable','off');
 			set(haveragevariable,'Enable','off');
+			return
+		else
+			hselect_callback()
 		end
         
 	end
@@ -892,12 +899,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		Sizevec = [];
 		PartLabelVec = [];
 		CompSizeVec = [];
+		dirlist = [];
 		for j = 1:length(filedirs)
 			currSnew = Dataset.(Datasetnames{j}).Snew;
 			OVFvec = [OVFvec; currSnew.VolFrac];
 			Sizevec = [Sizevec, currSnew.Size];
 			PartLabelVec = [PartLabelVec, currSnew.PartLabel];
 			CompSizeVec = [CompSizeVec; currSnew.CompSize];
+			dirlist = [dirlist; Dataset.(Datasetnames{j}).Directory];
 		end
 		
 		DataVectors.OVF = OVFvec;
