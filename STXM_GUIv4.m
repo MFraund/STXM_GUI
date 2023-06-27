@@ -68,13 +68,7 @@ hroutinepopup = uicontrol(...
 
 
 
-haveragevariable = uicontrol(...
-	'Style','pushbutton',...
-	'String','Average Variable',...
-	'Units','normalized',...
-	'Enable','off',...
-	'Position',[0.01,0.01,0.09,0.05],...
-	'Callback',{@haveragevariable_callback});
+
 
 
 %% Components in Load and Run screen
@@ -177,6 +171,16 @@ hloadmaps = uicontrol(...
 %% Components seen in Data Viewer screen
 %%%% 
 %%%%
+
+
+haveragevariable = uicontrol(...
+	'Style','pushbutton',...
+	'String','Average Variable',...
+	'Units','normalized',...
+    'Tag','DataViewer',...
+	'Position',[0.01,0.01,0.09,0.05],...
+	'Callback',{@haveragevariable_callback});
+
 
 rawbg = uibuttongroup (...
     'Units','normalized',...
@@ -365,7 +369,7 @@ popupimagesPOS(1,1) = radiomultiplePOS(1,1) + 0.05;
 
 hpopupimages = uicontrol(...
     'Style','popupmenu',...
-    'String',{'Data Summary', 'Prepost Images','Raw Images','Organic Vol. Fractions','ODStack Images','CarbonMaps Images','Alignment','Size Distribution'},...
+    'String',{'Data Summary', 'Prepost Images','Raw Images','Organic Vol. Fractions','ODStack Images','CarbonMaps Images','Alignment','Size Distribution', 'Spectra Viewer'},...
     'Units','normalized',...
     'Visible','off',...
     'Tag','DataViewer',...
@@ -440,6 +444,14 @@ hBeersTest = uicontrol(...
 	'Tag','DataViewer',...
 	'Callback',{@hBeersTest_callback});
 
+hSelectSpectra = uicontrol(...
+    'Style','pushbutton',...
+	'String','SelectSpectra',...
+	'Units','normalized',...
+	'Visible','off',...
+	'Position',[0.79,0.88,0.1,0.053],...
+	'Tag','SpectraViewer',...
+	'Callback',{@hSelectSpectra_callback});
 
 titlepos = [0.54,0.84,0.25,0.02];
 
@@ -657,6 +669,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function hload_callback(~,~)
 %         filedirs = uipickfiles; %calls up gui to pick multiple directories
 		filedirs = pickFileDirs(filedirs);
+        
 		if isempty(filedirs)
 			disp('Must pick some files');
 		end
@@ -899,20 +912,24 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		Sizevec = [];
 		PartLabelVec = [];
 		CompSizeVec = [];
-		dirlist = [];
+        partDirList = cell(0);
 		for j = 1:length(filedirs)
 			currSnew = Dataset.(Datasetnames{j}).Snew;
 			OVFvec = [OVFvec; currSnew.VolFrac];
 			Sizevec = [Sizevec, currSnew.Size];
 			PartLabelVec = [PartLabelVec, currSnew.PartLabel];
 			CompSizeVec = [CompSizeVec; currSnew.CompSize];
-			dirlist = [dirlist; Dataset.(Datasetnames{j}).Directory];
+            for k = 1:length(currSnew.PartLabel)
+                partDirList = [partDirList; Dataset.(Datasetnames{j}).Directory];
+            end
 		end
 		
 		DataVectors.OVF = OVFvec;
 		DataVectors.Size = Sizevec;
 		DataVectors.PartLabel = PartLabelVec;
 		DataVectors.CompSize = CompSizeVec;
+        DataVectors.partDirList = partDirList;
+		DataVectors.dirlist = filedirs;
 		
 		assignin('base','DataVectors',DataVectors);
 		
@@ -1129,8 +1146,40 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				else
 					Dataset.(currfov) = tempdataset.(currfov);
 				end
-			end
+            end
 			
+            normPartSpec = cell(0);
+            nPart = max(max(Dataset.(currfov).Snew.LabelMat));
+            specmask = Dataset.(currfov).Snew.spectr .* Dataset.(currfov).Snew.binmap;
+            
+            for p = 1:nPart
+                
+                % 		if length(normPartSpec) == 43
+                % 			text = 1;
+                % 		end
+                
+                currPartMask = zeros(size(Dataset.(currfov).Snew.binmap));
+                currPartMask(Dataset.(currfov).Snew.LabelMat==p) = 1;
+                specPartMask = specmask .* currPartMask;
+                specPartMask(isinf(specPartMask)) = NaN;
+                for k = 1:size(specPartMask,3)
+                    specPartMask(:,:,k) = medfilt2(specPartMask(:,:,k));
+                end
+                
+                currPartSpec = squeeze(mean(mean(specPartMask,2,'omitnan'),1,'omitnan'));
+                currPartSpec = currPartSpec - min(currPartSpec); %making sure values are only positive
+                
+                currEnergy = Dataset.(currfov).Snew.eVenergy;
+                
+                %Will be many copies of the same path, but will preserve particle identification for later
+                inputds = [currEnergy, currPartSpec];
+                [~, out2] = norm2poly_MF(6, inputds, 3, [260, 284, 300, 385]);
+                % 		normPartSpec = [normPartSpec; STXMfit(currEnergy, currPartSpec)];
+                normPartSpec = [normPartSpec; out2];
+                
+            end
+            Dataset.(currfov).Snew.ParticleSpec = normPartSpec;
+            
 			hwait.Name = ['Analyzing ', str(j+1),' of ', str(lfiledirs)];
 			disp(j);
 			waitbar(j/lfiledirs);
@@ -1475,16 +1524,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                         set(helementpanel,'Visible','off');
                         set(rawbg,'Visible','off');
                         readyvalue = get(hlistready,'Value');
-                        currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
                         radiomultipleval = get(hradiomultiple,'Value');
                         radiosingleval = get(hradiosingle,'Value');
                         
                         energy = currSnew.eVenergy;
-                        Xvalue = Dataset.(Datasetnames{readyvalue}).Snew.Xvalue;
-                        Yvalue = Dataset.(Datasetnames{readyvalue}).Snew.Yvalue;
-                        Sspectr = Dataset.(Datasetnames{readyvalue}).Snew.spectr;
-                        
-                        
                         
                         [~,rawidx(1)] = min(abs(energy - 278));
                         [~,rawidx(2)] = min(abs(energy - 320));
@@ -1559,7 +1602,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
                             
                             handle2 = subplot(2,2,2);
-                            imagesc(xAxislabel,yAxislabel,mean(Sspectr,3));
+%                             imagesc(xAxislabel,yAxislabel,mean(Sspectr,3));
+                            imagesc(xAxislabel, yAxislabel, LabelMat);
                             set(handle2,'Parent',hpanelmultiple);
                             axis image
                             colorbar
@@ -1569,7 +1613,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             else
                                 colormap(gray);
                             end
-                            title('Optical Density Stack Mean')
+%                             title('Optical Density Stack Mean')
+                            title('LabelMat');
                             xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
                             ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
                             
@@ -1707,36 +1752,27 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                                     imagesc([0, Xvalue],[0,Yvalue],carb);
                                     colormap gray
                                     colorbar
-                                    axis image
                                     title('PostEdge-PreEdge');
-                                    xlabel('X (\mum)');
-                                    ylabel('Y (\mum)');
-                                    
                                 case 2
                                     imagesc([0,Xvalue],[0,Yvalue],prepost);
                                     colormap gray
                                     colorbar
-                                    axis image
                                     set(gca,'Clim',[0,1.0])
-                                    xlabel('X (\mum)');
-                                    ylabel('Y (\mum)');
                                     title('PreEdge/PostEdge');
                                 case 3
                                     imagesc([0,Xvalue],[0,Yvalue],sp2);
                                     colormap gray
                                     set(gca,'Clim',[0,1.0])
-                                    axis image
-                                    xlabel('X (\mum)');
-                                    ylabel('Y (\mum)');
                                     colorbar
                                     title('%sp^{2} Map')
                                 case 4
                                     image(xdat,ydat,uint8(RgbMat));
                                     title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
-                                    axis image
-                                    xlabel('X (\mum)');
-                                    ylabel('Y (\mum)');
                             end
+                            axis image
+                            xlabel('X (\mum)');
+                            ylabel('Y (\mum)');
+                            
                         end
                         
                     case 'Alignment'
@@ -1773,6 +1809,24 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             'HandleVisibility','on');
 						histogram(currSnew.Size,[0:0.1:(max(currSnew.Size)+0.1)]);
                         
+                    case 'Spectra Viewer'
+                        set(hpanelmultiple,'Visible','off');
+                        set(hpanelsingle,'Visible','on');
+                        SpectraViewerCallback();
+%                         readyvalue = get(hlistready,'Value');
+%                         currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
+%                         
+%                         delete(gca);
+%                         axes(...
+%                             'Units','normalize',...
+% 							'Position',[0.07,0.06,0.9,0.9],...
+%                             'Parent',hpanelsingle,...
+%                             'Tag','haxes',...
+%                             'HandleVisibility','on');
+%                         
+%                         
+%                         specidx = imageselectionvalue;
+%                         plot(currSnew.eVenergy, currSnew.ParticleSpec{specidx});
                 end
                 
             case 'EDXmapview'  %%%%%Unfinished%%%%
@@ -1814,7 +1868,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         switch str{val}
             case 'Load & Run Data'
                 
-                hnotloadstuff = findobj('Tag','DataViewer','-or','Tag','StackLab','-or','Tag','QC');
+                hnotloadstuff = findobj(...
+                    'Tag','DataViewer',...
+                    '-or','Tag','StackLab',...
+                    '-or','Tag','QC');
                 set(hnotloadstuff,'Visible','off');
                 
                 hloadstuff = findobj('Tag','Load');
@@ -2490,6 +2547,46 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
     end
 
+%% Control for SpectraViewer
+    function SpectraViewerCallback()
+        readyvalue = get(hlistready,'Value');
+        specobjs = findobj('Tag','SpectraViewer');
+        set(specobjs, 'Visible','on');
+        currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
+        
+        delete(gca);
+        axes(...
+            'Units','normalize',...
+            'Position',[0.07,0.06,0.9,0.9],...
+            'Parent',hpanelsingle,...
+            'Tag','haxes',...
+            'HandleVisibility','on');
+        
+        image(uint8(currSnew.RGBCompMap));
+        title('select particle to expand spectra');
+        
+        
+    end
+
+    function hSelectSpectra_callback(~,~)
+        readyvalue = get(hlistready,'Value');
+        roi = drawpoint();
+        roipos = round(roi.Position);
+        currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
+        partnum = currSnew.LabelMat(roipos(2), roipos(1));
+        
+        if partnum == 0
+            beep
+            disp('Particle not included in binary mask');
+            delete(roi);
+            return
+        end
+        
+        figure;
+        plot(currSnew.eVenergy, currSnew.ParticleSpec{partnum});
+        pfig;
+        
+    end
 
 %% checking to make sure user wants to run raw data and destroy quality
 %control measures
