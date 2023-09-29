@@ -9,6 +9,8 @@ end
 
 if ~isfolder(dirPath)
 	%TODO add a short circuit if it's a single .hdr file
+    dirLabel = 'file';
+    return
 end
 
 dirContents = dir(dirPath);

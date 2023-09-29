@@ -27,13 +27,17 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 [varargin,givenBinMap] = ExtractVararginValue(varargin,'Bin Map',0);
 
 %% Loading Stack Info
-cd(datafolder) %% move to raw data folder
+if isfolder(datafolder)
+    cd(datafolder) %% move to raw data folder
+elseif isfile(datafolder)
+    cd(fileparts(datafolder));
+end
 foldstruct = dir; % makes a structure out of all folders
 
 % Load Stack Data unless stack is alraedy given, then short circuit
 numobj=length(foldstruct);
 if isempty(givenStruct)
-	S = LoadStackRawMulti(pwd); %% load stack data
+	S = LoadStackRawMulti(datafolder); %% load stack data
 else
 	S = givenStruct; %TODO test if this is the correct use for givenstruct
 end

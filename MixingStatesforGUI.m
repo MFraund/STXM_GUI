@@ -73,12 +73,18 @@ else
 end
 
 for i = 1:ldirs %looping through each selected directory
-	if ispc()
-		tempfiledir = strcat(filedirs{i},'\');
-	elseif ismac()
-		tempfiledir = strcat(filedirs{i},'/'); 
-	end
-    cd(filedirs{i}); %moving to each directory
+
+    if isfolder(filedirs{i})
+        if ispc()
+            tempfiledir = strcat(filedirs{i},'\');
+        elseif ismac()
+            tempfiledir = strcat(filedirs{i},'/');
+        end
+        cd(filedirs{i}); %moving to each directory
+    elseif isfile(filedirs{i})
+        cd(fullfile(fileparts(filedirs{i}),'..'));
+        tempfiledir = filedirs{i};
+    end
 	
 	[S,Snew,Mixing,Particles] = SingStackProcMixingStateOutputNOFIGS(tempfiledir,...
 		'Gamma Level', gammaLevel,...

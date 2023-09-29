@@ -700,6 +700,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				dirtype{i} = 'map  ';
 			elseif strcmp(dirLabel,'stack')
 				dirtype{i} = 'stack';
+            elseif strcmp(dirLabel, 'file')
+                dirtype{i} = 'file';
 			end
 			
             displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
@@ -718,6 +720,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		elseif contains(loadtype, 'spectra', 'IgnoreCase',true)
 			removelist_boolvec = contains(dirtype, 'stack');
 			displaydirs(removelist_boolvec) = [];
+        elseif contains(loadtype, 'file', 'IgnoreCase',true)
+            removelist_boolvec = contains(dirtype, 'file');
+            displaydirs(removelist_boolvec) = [];
 		end
 		
 		
@@ -1018,7 +1023,18 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			
 			usesaveflag = get(husesaved,'Value');
 			usesavedqcflag = get(hqcsaved,'Value');
-			cd(filedirs{j}); % XXX
+            if isfolder(filedirs{j})
+                cd(filedirs{j}); % XXX
+            elseif isfile(filedirs{j})
+                [currFolder,currFile,currExt] = fileparts(filedirs{j});
+                if contains(currExt,'.mat')
+                    fovname{j} = [currFile(2:end), currExt]; %removing the 'F' in front of saved files
+                    cd(currFolder);
+                elseif contains(currExt,'.hdr.') | contains(currExt,'.xim')
+                    cd(fullfile(fileparts(filedirs{j}),'..'));
+                end
+            end
+            
 			currdir = dir(filedirs{j});
 			for c = 1:length(currdir)
 				hdridx = strfind(currdir(c).name,'.hdr');
@@ -1028,7 +1044,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				end
 			end
 			
-			cd('..'); % XXX
+% 			cd('..'); % XXX
 			
 			try
 				mapstest = load(['F',fovname{j}],'mapstest');
@@ -1140,43 +1156,46 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			if usesaveflag == 0 && usesavedqcflag == 0
 				disp(threshMethod);
 				[tempdataset] = MixingStatesforGUI(filedirs(j),'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
-				if tempdataset.(currfov).Snew.elements.C == 0
-					removelist = [removelist, j];
-					Dataset = rmfield(Dataset,currfov);
-				else
-					Dataset.(currfov) = tempdataset.(currfov);
-				end
+% 				if tempdataset.(currfov).Snew.elements.C == 0
+% 					removelist = [removelist, j];
+% 					Dataset = rmfield(Dataset,currfov);
+% 				else
+% 					Dataset.(currfov) = tempdataset.(currfov);
+%                 end
+                Dataset.(currfov) = tempdataset.(currfov);
             end
 			
             normPartSpec = cell(0);
             nPart = max(max(Dataset.(currfov).Snew.LabelMat));
             specmask = Dataset.(currfov).Snew.spectr .* Dataset.(currfov).Snew.binmap;
             
-            for p = 1:nPart
-                
-                % 		if length(normPartSpec) == 43
-                % 			text = 1;
-                % 		end
-                
-                currPartMask = zeros(size(Dataset.(currfov).Snew.binmap));
-                currPartMask(Dataset.(currfov).Snew.LabelMat==p) = 1;
-                specPartMask = specmask .* currPartMask;
-                specPartMask(isinf(specPartMask)) = NaN;
-                for k = 1:size(specPartMask,3)
-                    specPartMask(:,:,k) = medfilt2(specPartMask(:,:,k));
+            if length(Dataset.(currfov).Snew.eVenergy) > 1
+                for p = 1:nPart
+                    
+                    % 		if length(normPartSpec) == 43
+                    % 			text = 1;
+                    % 		end
+                    
+                    currPartMask = zeros(size(Dataset.(currfov).Snew.binmap));
+                    currPartMask(Dataset.(currfov).Snew.LabelMat==p) = 1;
+                    specPartMask = specmask .* currPartMask;
+                    specPartMask(isinf(specPartMask)) = NaN;
+                    for k = 1:size(specPartMask,3)
+                        specPartMask(:,:,k) = medfilt2(specPartMask(:,:,k));
+                    end
+                    
+                    currPartSpec = squeeze(mean(mean(specPartMask,2,'omitnan'),1,'omitnan'));
+                    currPartSpec = currPartSpec - min(currPartSpec); %making sure values are only positive
+                    
+                    currEnergy = Dataset.(currfov).Snew.eVenergy;
+                    
+                    %Will be many copies of the same path, but will preserve particle identification for later
+                    inputds = [currEnergy, currPartSpec];
+                    [~, out2] = norm2poly_MF(6, inputds, 3, [260, 284, 300, 385]);
+                    % 		normPartSpec = [normPartSpec; STXMfit(currEnergy, currPartSpec)];
+                    normPartSpec = [normPartSpec; out2];
+                    
                 end
-                
-                currPartSpec = squeeze(mean(mean(specPartMask,2,'omitnan'),1,'omitnan'));
-                currPartSpec = currPartSpec - min(currPartSpec); %making sure values are only positive
-                
-                currEnergy = Dataset.(currfov).Snew.eVenergy;
-                
-                %Will be many copies of the same path, but will preserve particle identification for later
-                inputds = [currEnergy, currPartSpec];
-                [~, out2] = norm2poly_MF(6, inputds, 3, [260, 284, 300, 385]);
-                % 		normPartSpec = [normPartSpec; STXMfit(currEnergy, currPartSpec)];
-                normPartSpec = [normPartSpec; out2];
-                
             end
             Dataset.(currfov).Snew.ParticleSpec = normPartSpec;
             
@@ -3213,10 +3232,28 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr','Append',filedirs_in);
 		
-		if ~iscell(newfiledirs) % If user presses cancel button
-			return;
-		end
+        if ~iscell(newfiledirs) % If user presses cancel button
+            return;
+        end
 		
+        [~,~,fileExts] = fileparts(newfiledirs);
+        matTest = contains(fileExts, '.mat');
+        matIdxs = find(matTest);
+        removeIdxs = [];
+        for m = 1:sum(matTest)
+            tempSnew = load(newfiledirs{matIdxs(m)},'Snew');
+            tempMatLoad = load(newfiledirs{matIdxs(m)},'dirList');
+            
+            if ~isempty(fieldnames(tempSnew)) % the mat file is data
+                %TODO
+            elseif ~isempty(fieldnames(tempMatLoad)) % the mat file is a directory list          
+                removeIdxs = [removeIdxs, m];
+                newfiledirs = [newfiledirs; tempMatLoad.dirList];
+            end
+            
+        end
+        newfiledirs(removeIdxs) = []; %directory lists are removed
+        
 		lnfdirs = length(newfiledirs);
 		lofdirs = length(filedirs_in);
 		remove_list = [];
