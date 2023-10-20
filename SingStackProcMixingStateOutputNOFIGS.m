@@ -134,6 +134,12 @@ if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
     Snew = CNOeleMaps(Snew);
 end
 
+%% Making Cropped Particle Struct
+
+CroppedParts.raw
+CroppedParts.CMap
+CroppedParts.OVF
+
 %% Version Checking
 %%%this is to signify the new version of
 %%%SingSTackProcMixingStateOutputNOFIGS has been run, which includes the

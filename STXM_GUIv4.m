@@ -892,8 +892,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		% Removing chosen value
         readyliststring(readylistvalue) = [];
 		filedirs(readylistvalue) = [];
-		Dataset = rmfield(Dataset, Datasetnames{readylistvalue});
-		Datasetnames(readylistvalue) = [];
+        if ~isempty(Dataset)
+            Datasetnames = fieldnames(Dataset);
+            Dataset = rmfield(Dataset, Datasetnames{readylistvalue});
+            Datasetnames(readylistvalue) = [];
+        end
 		
 		% Setting new string and ensuring a non-existent value isn't selected
         set(hlistready,'String',readyliststring,'Value',1);
@@ -1169,7 +1172,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             nPart = max(max(Dataset.(currfov).Snew.LabelMat));
             specmask = Dataset.(currfov).Snew.spectr .* Dataset.(currfov).Snew.binmap;
             
-            if length(Dataset.(currfov).Snew.eVenergy) > 1
+            if length(Dataset.(currfov).Snew.eVenergy) > 1 && Dataset.(currfov).Snew.elements.C == 1
                 for p = 1:nPart
                     
                     % 		if length(normPartSpec) == 43
