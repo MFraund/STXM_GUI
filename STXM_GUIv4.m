@@ -779,9 +779,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
 			end
 			
-		end
-		
-		
+        end	
 		
 		loadstr = get(hloadmaps, 'String');
 		loadval = get(hloadmaps, 'Value');
@@ -1034,7 +1032,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			usesavedqcflag = get(hqcsaved,'Value');
             
             if isfolder(filedirs{j})
-                %cd(filedirs{j}); % XXX
                 currdir = dir(filedirs{j});
                 
             elseif isfile(filedirs{j})
@@ -1042,27 +1039,25 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
                 if contains(currExt,'.mat')
                     fovname{j} = [currFile(2:end), currExt]; %removing the 'F' in front of saved files
-                    %cd(currFolder);
                     currdir = dir(currFolder);
                     
                 elseif contains(currExt,'.hdr.') | contains(currExt,'.xim')
                     containingFolder = fullfile(fileparts(filedirs{j}),'..');
                     currdir = dir(containingFolder);
-                    %cd(fullfile(fileparts(filedirs{j}),'..'));
                 end
             end
             
-			%currdir = dir(filedirs{j});
 			for c = 1:length(currdir)
 				hdridx = strfind(currdir(c).name,'.hdr');
 				if ~isempty(hdridx)
 					fovname{j} = currdir(c).name(1:hdridx-1);
+                    currfov = ['FOV',fovname{j}];
 					break
 				end
 			end
 			
-% 			cd('..'); % XXX
-			
+			%%% This should be a version check rather than checking for
+			%%% "mapstest" which was relevant before but no longer
 			try
                 saveDataDir = [fullfile(currdir(1).folder, '..', ['F', fovname{j}])];
 				mapstest = load(saveDataDir,'mapstest');
@@ -1072,117 +1067,106 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				usesavedqcflag = 0;
 			end
 			
-			[~,tempfov] = fileparts(filedirs{j});
-			currfov = ['FOV',tempfov];
 			
-			if usesaveflag == 1
-				
-				try
-                    saveDataDir = [fullfile(currdir(1).folder, '..', ['F', fovname{j}])];
-					tempdataset = load(saveDataDir);
-					Dataset.(currfov).S = tempdataset.S;
-					Dataset.(currfov).Snew = tempdataset.Snew;
-					Dataset.(currfov).Mixing = tempdataset.Mixing;
-					Dataset.(currfov).Particles = tempdataset.Particles;
-					Dataset.(currfov).Directory = tempdataset.datafolder;
-					Dataset.(currfov).Snew.elements = tempdataset.Snew.elements;
-					Dataset.(currfov).Snew.RGBCompMap = tempdataset.Snew.RGBCompMap;
-					Dataset.(currfov).Snew.Maps = tempdataset.Snew.Maps;
-					Dataset.(currfov).Snew.LabelMat = tempdataset.Snew.LabelMat;
-					Dataset.(currfov).Snew.VolFrac = tempdataset.Snew.VolFrac;
-					Dataset.(currfov).Snew.Size = tempdataset.Snew.Size;
-					Dataset.(currfov).Snew.PartLabel = tempdataset.Snew.PartLabel;
-					Dataset.(currfov).Snew.CompSize = tempdataset.Snew.CompSize;
-					
-				catch
-					usesaveflag = 0;
+            if usesaveflag == 1
+                try
+                    tempdataset = load(saveDataDir);
+                    Dataset.(currfov).S = tempdataset.S;
+                    Dataset.(currfov).Snew = tempdataset.Snew;
+                    Dataset.(currfov).Mixing = tempdataset.Mixing;
+                    Dataset.(currfov).Particles = tempdataset.Particles;
+                    Dataset.(currfov).Directory = tempdataset.datafolder;
+                    Dataset.(currfov).Snew.elements = tempdataset.Snew.elements;
+                    Dataset.(currfov).Snew.RGBCompMap = tempdataset.Snew.RGBCompMap;
+                    Dataset.(currfov).Snew.Maps = tempdataset.Snew.Maps;
+                    Dataset.(currfov).Snew.LabelMat = tempdataset.Snew.LabelMat;
+                    Dataset.(currfov).Snew.VolFrac = tempdataset.Snew.VolFrac;
+                    Dataset.(currfov).Snew.Size = tempdataset.Snew.Size;
+                    Dataset.(currfov).Snew.PartLabel = tempdataset.Snew.PartLabel;
+                    Dataset.(currfov).Snew.CompSize = tempdataset.Snew.CompSize;
+                    
+                catch
+                    usesaveflag = 0;
                     tempdataset = [];
-% 					displaydirs = get(hlistready,'String');
-% 					currdisplaydir = displaydirs{j};
-% 					currdisplaydir = [currdisplaydir, 'ERROR'];
-% 					displaydirs{j} = currdisplaydir;
-% 					set(hlistready,'String',displaydirs);
-				end
-				
-				% Defaults
-				Dataset.(currfov).binadjtest = 0;
-				Dataset.(currfov).threshlevel = 2;
-				Dataset.(currfov).savedbinmap = 0;
-				Dataset.(currfov).inorganic = 'NaCl';
-				Dataset.(currfov).organic = 'Sucrose';
-				
-				% Pulling numbers if already defined
-				if hasfield(tempdataset, 'binadjtest',1)
-					Dataset.(currfov).binadjtest = tempdataset.binadjtest;
-				end
-				
-				if hasfield(tempdataset, 'threshlevel',1)
-					Dataset.(currfov).threshlevel = tempdataset.threshlevel;
-				end
-				
-				if hasfield(tempdataset, 'savedbinmap',1)
-					Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
-				end
-				
-				if hasfield(tempdataset, 'inorganic',1)
-					Dataset.(currfov).inorganic = tempdataset.inorganic;
-				end
-				
-				if hasfield(tempdataset, 'organic',1)
-					Dataset.(currfov).organic = tempdataset.organic;
-				end
-				
-			elseif usesavedqcflag == 1
-				try%%%%%%<<<<<<<<<<<<<<<<<<<<<<
-					threshlevel = load(['F',fovname{j}],'threshlevel');
-					threshfieldnames = fieldnames(threshlevel);
-					if isempty(threshfieldnames)
-						threshlevel = 2;
-					else
-						threshlevel = threshlevel.(threshfieldnames{1});
-					end
-				catch
-					threshlevel = 2;
-				end
-				
-				try
-					binadjtest = load(['F',fovname{j}],'binadjtest');
-					binfieldnames = fieldnames(binadjtest);
-					if isempty(binfieldnames)
-						binadjtest = 0;
-					else
-						binadjtest = binadjtest.(binfieldnames{1});
-					end
-				catch
-					binadjtest = 0;
-				end
-				
-				try
-					savedbinmap = load(['F',fovname{j}],'savedbinmap');
-					savedbinmapfieldnames = fieldnames(savedbinmap);
-					if isempty(savedbinmapfieldnames)
-						savedbinmap = 0;
-					else
-						savedbinmap = savedbinmap.(savedbinmapfieldnames{1});
-					end
-				catch
-					savedbinmap = 0;
-				end
-				
-				[tempdataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);				
-				Dataset.(currfov) = tempdataset.(currfov);
-			end
-			
-			if usesaveflag == 0 && usesavedqcflag == 0
-				disp(threshMethod);
-				[tempdataset] = MixingStatesforGUI(filedirs(j),'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
-% 				if tempdataset.(currfov).Snew.elements.C == 0
-% 					removelist = [removelist, j];
-% 					Dataset = rmfield(Dataset,currfov);
-% 				else
-% 					Dataset.(currfov) = tempdataset.(currfov);
-%                 end
+                    
+                end
+                
+                % Defaults
+                Dataset.(currfov).binadjtest = 0;
+                Dataset.(currfov).threshlevel = 2;
+                Dataset.(currfov).savedbinmap = 0;
+                Dataset.(currfov).inorganic = 'NaCl';
+                Dataset.(currfov).organic = 'Sucrose';
+                
+                % Pulling numbers if already defined
+                if hasfield(tempdataset, 'binadjtest',1)
+                    Dataset.(currfov).binadjtest = tempdataset.binadjtest;
+                end
+                
+                if hasfield(tempdataset, 'threshlevel',1)
+                    Dataset.(currfov).threshlevel = tempdataset.threshlevel;
+                end
+                
+                if hasfield(tempdataset, 'savedbinmap',1)
+                    Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
+                end
+                
+                if hasfield(tempdataset, 'inorganic',1)
+                    Dataset.(currfov).inorganic = tempdataset.inorganic;
+                end
+                
+                if hasfield(tempdataset, 'organic',1)
+                    Dataset.(currfov).organic = tempdataset.organic;
+                end
+                
+            else %dont use saved data
+                
+                threshlevel = 2; %supplying defaults
+                binadjtest = 0;
+                savedbinmap = 0;
+                
+                if usesavedqcflag == 1
+                    try%%%%%%<<<<<<<<<<<<<<<<<<<<<< Need to enforce a standard of saving these three qc variables
+                        threshlevel = load(saveDataDir,'threshlevel');
+                        threshfieldnames = fieldnames(threshlevel);
+                        if isempty(threshfieldnames)
+                            threshlevel = 2;
+                        else
+                            threshlevel = threshlevel.(threshfieldnames{1});
+                        end
+                    catch
+                        threshlevel = 2;
+                    end
+
+                    try
+                        binadjtest = load(saveDataDir,'binadjtest');
+                        binfieldnames = fieldnames(binadjtest);
+                        if isempty(binfieldnames)
+                            binadjtest = 0;
+                        else
+                            binadjtest = binadjtest.(binfieldnames{1});
+                        end
+                    catch
+                        binadjtest = 0;
+                    end
+
+                    try
+                        savedbinmap = load(saveDataDir,'savedbinmap');
+                        savedbinmapfieldnames = fieldnames(savedbinmap);
+                        if isempty(savedbinmapfieldnames)
+                            savedbinmap = 0;
+                        else
+                            savedbinmap = savedbinmap.(savedbinmapfieldnames{1});
+                        end
+                    catch
+                        savedbinmap = 0;
+                    end
+                end
+               
+                disp(threshMethod);
+                [tempdataset] = MixingStatesforGUI(filedirs(j),'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap, 'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
                 Dataset.(currfov) = tempdataset.(currfov);
+                
             end
 			
             normPartSpec = cell(0);
