@@ -921,8 +921,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		PartLabelVec = [];
 		CompSizeVec = [];
         partDirList = cell(0);
+        croppedOVF = cell(0);
+        partMask = cell(0);
+        cSpecParts = cell(0);
 		for j = 1:length(filedirs)
 			currSnew = Dataset.(Datasetnames{j}).Snew;
+            currSnew = CropParticles(currSnew);
 			OVFvec = [OVFvec; currSnew.VolFrac];
 			Sizevec = [Sizevec, currSnew.Size];
 			PartLabelVec = [PartLabelVec, currSnew.PartLabel];
@@ -930,6 +934,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             for k = 1:length(currSnew.PartLabel)
                 partDirList = [partDirList; Dataset.(Datasetnames{j}).Directory];
             end
+            partMask = [partMask ; currSnew.CroppedParticles.partMask];
+            croppedOVF = [croppedOVF ; currSnew.CroppedParticles.OVFParts];
+            cSpecParts = [cSpecParts ; currSnew.CroppedParticles.cSpecParts];
 		end
 		
 		DataVectors.OVF = OVFvec;
@@ -938,6 +945,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		DataVectors.CompSize = CompSizeVec;
         DataVectors.partDirList = partDirList;
 		DataVectors.dirlist = filedirs;
+        DataVectors.croppedOVF = croppedOVF;
+        DataVectors.partMask = partMask;
+        DataVectors.cSpecParts = cSpecParts;
 		
 		assignin('base','DataVectors',DataVectors);
 		
@@ -981,11 +991,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		tic
 		readydirs = get(hlistready,'String'); %get directory strings from leftmost (ready) list
 		readylistval = get(hlistready,'Value');
-		%         dirstorun = get(hlistready,'String');
+
 		lreadydirs = length(readydirs);
 		foldernames = cell(lreadydirs,1); %preallocation
 		dirstorun = cell(lreadydirs,1); %preallocation
-		%global filedirs
+        
 		filedirs = filedirs'; %this makes it nx1 which is not necessary but makes it easier to work with
 		lfiledirs = length(filedirs);
 		
@@ -1002,14 +1012,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		loadobj = findobj('Tag','Load');
 		set(loadobj(:),'Visible','off');
 		
-		%         set(hload,'Visible','off')
-		%         set(hanalyze,'Visible','off')
 		set(hroutinepopup,'Value',2)
 		set(hradiosingle,'Visible','on')
 		set(hradiomultiple,'Visible','on')
 		set(hpopupimages,'Visible','on');%,'Value',1)
-		
-		%         set(hsort,'Visible','off')
 		
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		
@@ -1026,19 +1032,27 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			
 			usesaveflag = get(husesaved,'Value');
 			usesavedqcflag = get(hqcsaved,'Value');
+            
             if isfolder(filedirs{j})
-                cd(filedirs{j}); % XXX
+                %cd(filedirs{j}); % XXX
+                currdir = dir(filedirs{j});
+                
             elseif isfile(filedirs{j})
                 [currFolder,currFile,currExt] = fileparts(filedirs{j});
+                
                 if contains(currExt,'.mat')
                     fovname{j} = [currFile(2:end), currExt]; %removing the 'F' in front of saved files
-                    cd(currFolder);
+                    %cd(currFolder);
+                    currdir = dir(currFolder);
+                    
                 elseif contains(currExt,'.hdr.') | contains(currExt,'.xim')
-                    cd(fullfile(fileparts(filedirs{j}),'..'));
+                    containingFolder = fullfile(fileparts(filedirs{j}),'..');
+                    currdir = dir(containingFolder);
+                    %cd(fullfile(fileparts(filedirs{j}),'..'));
                 end
             end
             
-			currdir = dir(filedirs{j});
+			%currdir = dir(filedirs{j});
 			for c = 1:length(currdir)
 				hdridx = strfind(currdir(c).name,'.hdr');
 				if ~isempty(hdridx)
@@ -1050,7 +1064,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 % 			cd('..'); % XXX
 			
 			try
-				mapstest = load(['F',fovname{j}],'mapstest');
+                saveDataDir = [fullfile(currdir(1).folder, '..', ['F', fovname{j}])];
+				mapstest = load(saveDataDir,'mapstest');
 			catch
 				disp(['no saved data for ' , fovname{j}]);
 				usesaveflag = 0;
@@ -1063,7 +1078,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			if usesaveflag == 1
 				
 				try
-					tempdataset = load(['F',fovname{j}]);
+                    saveDataDir = [fullfile(currdir(1).folder, '..', ['F', fovname{j}])];
+					tempdataset = load(saveDataDir);
 					Dataset.(currfov).S = tempdataset.S;
 					Dataset.(currfov).Snew = tempdataset.Snew;
 					Dataset.(currfov).Mixing = tempdataset.Mixing;
@@ -1080,6 +1096,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 					
 				catch
 					usesaveflag = 0;
+                    tempdataset = [];
 % 					displaydirs = get(hlistready,'String');
 % 					currdisplaydir = displaydirs{j};
 % 					currdisplaydir = [currdisplaydir, 'ERROR'];
@@ -1214,188 +1231,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		readydirs(removelist) = [];
 		set(hlistready,'String',readydirs);
 		
-		
-		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-		%         if usesaveflag == 1
-		%             if any(exist('sillystring','file'))
-		%                 hwait = waitbar(0,sillystring);
-		%             else
-		%                 hwait = waitbar(0,'plz w8');
-		%             end
-		%
-		% 			for j = 1:length(filedirs)
-		%                 cd(filedirs{j}); % XXX
-		%                 currdir = dir(filedirs{j});
-		%                 for c = 1:length(currdir)
-		%                     hdridx = strfind(currdir(c).name,'.hdr');
-		%                     if ~isempty(hdridx)
-		%                         fovname{j} = currdir(c).name(1:hdridx-1);
-		%                         break
-		%                     end
-		%                 end
-		%
-		%                 cd('..'); % XXX
-		%
-		%                 try
-		%                     mapstest = load(['F',fovname{j}],'mapstest');
-		%                 catch
-		%                     mapstest = struct([]);
-		%                 end
-		%
-		%                 if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
-		%                     %[Dataset] = MixingStatesforGUI(dirstorun(j));
-		%                     usesaveflag = 0;
-		%                     continue
-		%                 else                                %Updated CarbonMaps has been run on Jth sample
-		%
-		% 					try
-		% 						tempdataset = load(['F',fovname{j}]);
-		% 						[~,tempfov] = fileparts(filedirs{j});
-		% 						currfov = ['FOV',tempfov];
-		% 						Dataset.(currfov).S = tempdataset.S;
-		% 						Dataset.(currfov).Snew = tempdataset.Snew;
-		% 						Dataset.(currfov).Mixing = tempdataset.Mixing;
-		% 						Dataset.(currfov).Particles = tempdataset.Particles;
-		% 						Dataset.(currfov).Directory = tempdataset.datafolder;
-		% 					catch
-		% 						displaydirs = get(hlistready,'String');
-		% 						currdisplaydir = displaydirs{j};
-		% 						currdisplaydir = [currdisplaydir, 'ERROR'];
-		% 						displaydirs{j} = currdisplaydir;
-		% 						set(hlistready,'String',displaydirs);
-		% 						continue
-		% 					end
-		%
-		%
-		% 					if hasfield(tempdataset, 'binadjtest')
-		% 						Dataset.(currfov).binadjtest = tempdataset.binadjtest;
-		% 					else
-		% 						Dataset.(currfov).binadjtest = 0;
-		% 					end
-		%
-		% 					if hasfield(tempdataset, 'threshlevel')
-		% 						Dataset.(currfov).threshlevel = tempdataset.threshlevel;
-		% 					else
-		% 						Dataset.(currfov).threshlevel = 2;
-		% 					end
-		%
-		% 					if hasfield(tempdataset, 'savedbinmap')
-		% 						Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
-		% 					else
-		% 						Dataset.(currfov).savedbinmap = 0;
-		% 					end
-		%
-		% 					if hasfield(tempdataset, 'inorganic')
-		% 						Dataset.(currfov).inorganic = tempdataset.inorganic;
-		% 					else
-		% 						Dataset.(currfov).inorganic = 'NaCl';
-		% 					end
-		%
-		% 					if hasfield(tempdataset, 'organic')
-		% 						Dataset.(currfov).organic = tempdataset.organic;
-		% 					else
-		% 						Dataset.(currfov).organic = 'Sucrose';
-		% 					end
-		%
-		% 				end
-		% 				waitbar(j/length(filedirs));
-		%
-		% 			end
-		%             close(hwait);
-		%             %load stuff
-		%             %check for mapstest
-		%             %use or rerun
-		%             load()
-		%
-		%         elseif usesavedqcflag == 1
-		%             if any(exist('sillystring','file'))
-		%                 hwait = waitbar(0,sillystring);
-		%             else
-		%                 hwait = waitbar(0,'plz w8');
-		%             end
-		%
-		%             for j = 1:length(filedirs)
-		%                 cd(filedirs{j});
-		%                 currdir = dir;
-		%                 for c = 1:length(currdir)
-		%                     hdridx = strfind(currdir(c).name,'.hdr');
-		%                     if ~isempty(hdridx)
-		%                         fovname{j} = currdir(c).name(1:hdridx-1);
-		%                         break
-		%                     end
-		%                 end
-		%
-		%                 cd('..');
-		%
-		%                 try
-		%                     mapstest = load(['F',fovname{j}],'mapstest');
-		%                 catch
-		%                     mapstest = struct([]);
-		%                 end
-		%
-		%                 try%%%%%%<<<<<<<<<<<<<<<<<<<<<<
-		%                     threshlevel = load(['F',fovname{j}],'threshlevel');
-		%                     threshfieldnames = fieldnames(threshlevel);
-		%                     if isempty(threshfieldnames)
-		%                         threshlevel = 2;
-		%                     else
-		%                         threshlevel = threshlevel.(threshfieldnames{1});
-		%                     end
-		%                 catch
-		%                     threshlevel = 2;
-		%                 end
-		%
-		%                 try
-		%                     binadjtest = load(['F',fovname{j}],'binadjtest');
-		%                     binfieldnames = fieldnames(binadjtest);
-		%                     if isempty(binfieldnames)
-		%                         binadjtest = 0;
-		%                     else
-		%                         binadjtest = binadjtest.(binfieldnames{1});
-		%                     end
-		%                 catch
-		%                     binadjtest = 0;
-		%                 end
-		%
-		%                 try
-		%                     savedbinmap = load(['F',fovname{j}],'savedbinmap');
-		%                     savedbinmapfieldnames = fieldnames(savedbinmap);
-		%                     if isempty(savedbinmapfieldnames)
-		%                         savedbinmap = 0;
-		%                     else
-		%                         savedbinmap = savedbinmap.(savedbinmapfieldnames{1});
-		%                     end
-		%                 catch
-		%                     savedbinmap = 0;
-		%                 end
-		%
-		%
-		%                 if isempty(fieldnames(mapstest))   %Either old CarbonMaps was ran or nothing was
-		%                     %[Dataset] = MixingStatesforGUI(dirstorun(j));
-		% %                     usesavedqcflag = 0;
-		% %                     break
-		%                 else                                %Updated CarbonMaps has been run on Jth sample
-		%                     [Dataset] = MixingStatesforGUI(filedirs(j), 'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap);
-		%                     %tempdataset = load(['F',fovname{j}]);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-		%                     %[~,tempfov] = fileparts(dirstorun{j});
-		%                     %currfov = ['FOV',tempfov];
-		%                     %Dataset.(currfov).S = tempdataset.S;
-		%                     %Dataset.(currfov).Snew = tempdataset.Snew;
-		%                     %Dataset.(currfov).Mixing = tempdataset.Mixing;
-		%                     %Dataset.(currfov).Particles = tempdataset.Particles;
-		%                     %Dataset.(currfov).Directory = tempdataset.datafolder;
-		%
-		%                 end
-		%                     waitbar(j/length(filedirs));
-		%
-		%             end
-		%             close(hwait);
-		% 		end
-		%
-		% 		if usesaveflag == 0 && usesavedqcflag == 0
-		% 			disp(threshMethod);
-		% 			[Dataset] = MixingStatesforGUI(filedirs,'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
-		% 		end
 		
 		if ~isempty(Dataset)
 			Datasetnames = fieldnames(Dataset);

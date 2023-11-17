@@ -101,6 +101,7 @@ if Snew.elements.C == 1
 	end
     Snew = DirLabelOrgVolFrac(Snew,inorganic,organic);
 %     [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
+    Snew = CropParticles(Snew);
 	Particles = ParticlesInfo(Snew);
 	Mixing = 0;
 else
@@ -134,11 +135,6 @@ if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
     Snew = CNOeleMaps(Snew);
 end
 
-%% Making Cropped Particle Struct
-
-CroppedParts.raw
-CroppedParts.CMap
-CroppedParts.OVF
 
 %% Version Checking
 %%%this is to signify the new version of
