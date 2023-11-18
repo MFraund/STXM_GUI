@@ -1118,8 +1118,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 if hasfield(tempdataset, 'organic',1)
                     Dataset.(currfov).organic = tempdataset.organic;
                 end
-                
-            else %dont use saved data
+            end
+            
+            
+            if usesaveflag == 0 %dont use saved data
                 
                 threshlevel = 2; %supplying defaults
                 binadjtest = 0;
@@ -1164,7 +1166,22 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 end
                
                 disp(threshMethod);
-                [tempdataset] = MixingStatesforGUI(filedirs(j),'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap, 'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+                %-------------------------------%---------------------------------%--------------------------------------%--------------------------------------%%-------------------------------%---------------------------------%--------------------------------------%
+%                 [tempdataset] = MixingStatesforGUI(filedirs(j),'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap, 'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
+                [currS, currSnew, currMixing, currParticles] = SingStackProcMixingStateOutputNOFIGS(filedirs{j},...
+                    'Gamma Level', threshlevel,...
+                    'Bin Adjust Flag', binadjtest,...
+                    'Bin Map', savedbinmap,...
+                    'inorganic',inorganic,...
+                    'organic',organic,...
+                    'Thresh Method',threshMethod...
+                    );
+                tempdataset.(currfov).S = currS;
+                tempdataset.(currfov).Snew = currSnew;
+                tempdataset.(currfov).Mixing = currMixing;
+                tempdataset.(currfov).Particles = currParticles;
+                tempdataset.(currfov).Directory = filedirs(j);
+                %-------------------------------%---------------------------------%--------------------------------------%--------------------------------------%%-------------------------------%---------------------------------%--------------------------------------%
                 Dataset.(currfov) = tempdataset.(currfov);
                 
             end
