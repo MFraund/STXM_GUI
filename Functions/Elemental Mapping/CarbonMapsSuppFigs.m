@@ -57,13 +57,18 @@ elseif isempty(test)
     return
 end
 
-% [varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
+[varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
 % [varargin, rootdir] = ExtractVararginValue(varargin, 'Root Directory', 0.35);
 % [varargin, sample] = ExtractVararginValue(varargin, 'Sample', 0.35);
-% [varargin, manualbinmapcheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
-% [varargin, binmap] = ExtractVararginValue(varargin, 'Binmap', 0.35);
+[varargin, manualbinmapcheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
+[varargin, binmap] = ExtractVararginValue(varargin, 'Binmap', 0.35);
 % [varargin, figsav] = ExtractVararginValue(varargin, 'Save Figures', 0);
 % [varargin, nofig] = ExtractVararginValue(varargin, 'Plot Figures', 0);
+[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
+[varargin, carbonLimitSN] = ExtractVararginValue(varagin, 'Carbon SN Limit', 3);
+[varargin, sp2LimitSN] = ExtractVararginValue(varagin, 'SP2 SN Limit', 3);
+[varargin, preLimitSN] = ExtractVararginValue(varagin, 'Pre-edge SN Threshold', 3);
+[varargin, prepostLimitSN] = ExtractVararginValue(varagin, 'PrePost SN Threshold', 3);
 
 
 if isempty(varargin)
@@ -224,7 +229,7 @@ errcarb = sqrt(Snew.errOD(:,:,postidx).^2 + Snew.errOD(:,:,preidx).^2);
 
 carb1=carb;                  % taking STD of regions not having particles
 noise = carb1(Snew.mask==1);
-thresh = std(noise).*3; %trying this with LOQ (10xS/N) instead of LOD (3xS/N)
+thresh = std(noise).*carbonLimitSN; %trying this with LOQ (10xS/N) instead of LOD (3xS/N)
 carb1(carb1<thresh) = 0;
 % carb1(carb1<0)=0; % removes regions having negative total carbon
 
@@ -254,7 +259,7 @@ prepost(isnan(prepost)==1) = 0;
 
 noise_pre = std(pre(Snew.mask==1));
 premask = pre;
-premask(pre < 3.*noise_pre) = 0;
+premask(pre < preLimitSN.*noise_pre) = 0;
 premask = medfilt2(premask,[3,3]);
 premask(premask>0) = 1;
 
@@ -267,7 +272,7 @@ noise_prepost = std(prepost(Snew.mask == 1));
 
 prepost = prepost .* binmap;
 
-prepost(prepost < 3.*noise_prepost) = 0;
+prepost(prepost < prepostLimitSN.*noise_prepost) = 0;
 
 %%%Thresholding inorganics vs organics according to Moffet 2010.  0.5 is
 %%%the value for KCl and works in general.  NaCl threshold would be ~1
@@ -314,7 +319,7 @@ if ~isempty(sp2idx)
     
     sp2noise = std(rawsp2(Snew.mask==1));
     sp2 = sp2 .* binmap;
-    sp2(sp2 < 3.*sp2noise) = 0; %should be < SNLimit
+    sp2(sp2 < sp2LimitSN.*sp2noise) = 0; %should be < SNLimit
     sp2(sp2<spThresh)=0;                                                     % threshold everythin less than 40% sp2
     
     finSp2mask=sp2;
