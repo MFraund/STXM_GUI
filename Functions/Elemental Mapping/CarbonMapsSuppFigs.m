@@ -1,37 +1,32 @@
-function Snew=CarbonMapsSuppFigs(Snew,varargin)
-% Snew=CarbonMaps(Snew,sp2,savepath,sample{j})
-% Snew=CarbonMaps(Snew,35)
+function Snew = CarbonMapsSuppFigs(Snew, varargin)
+%% Determines component maps over the carbon K-edge 
+%
+% Snew = CarbonMapsSuppFigs(Snew, varargin)
+%
 % Input
 %   Snew is the stack structure produced using functions OdStack.m and
 %   AlignStack.m or any bastardization of those
+%  Name-Value Pairs
+% sp2 Threshold (0.35)
+% Manual Binmap (no)
 % Output__________________________________________________________________
 % Snew.TotC is the post edge minus the pre edge image
 % Snew.sp2 is the sp2 map
-% Snew.SootEccentricity, MajorAxisLength, MinorAxisLength are vectors with
-%   the parameters of best fit elipse around soot inclusion
+% Snew.SootEccentricity, MajorAxisLength, MinorAxisLength are vectors with the parameters of best fit elipse around soot inclusion
 % Snew.ConvexArea is a vector of areas convex hull around soot inclusion
 % Snew.SootArea is a vector of areas for each soot inclusion
-% Snew.LabelMat is a matrix with particle numbers at each pixel of
-%   corresponding particle. Particle numbering goes from left to right (see 
-%   MATLAB documentation on bwlabel.m) 
-% Snew.PartLabel is a cell array of strings containing particle
-%   classification labels for each particle: OC, OCIN, OCBC, OCBCIN...
-% Snew.PartSN is a matrix of particle serial numbers having the format
-%  YY-MM-DD-StackNumber-ParticleNumber
-% Snew.BinMap matrix containing zeros where there are no particles and ones
-%   where particles have been identified
+% Snew.LabelMat is a matrix with particle numbers at each pixel of corresponding particle. Particle numbering goes from left to right (see MATLAB documentation on bwlabel.m) 
+% Snew.PartLabel is a cell array of strings containing particle classification labels for each particle: OC, OCIN, OCBC, OCBCIN...
+% Snew.PartSN is a matrix of particle serial numbers having the format YY-MM-DD-StackNumber-ParticleNumber
+% Snew.BinMap matrix containing zeros where there are no particles and ones where particles have been identified
 % Snew.Size is a vector of area equivalent diameters for each particle
-% Snew.CompSize is a matrix of sizes for different componets OC BC etc 
-%   (columns) for all particles (rows)
-% Snew.PartDirs is a cell array of directories where data file is found
-%   (these should all be the same).
-% Snew.RGBCompMap RGB matrices for different components (BC=red=RGBCompMap(:,:,1)
-%   ,OC=green=RGBCompMap(:,:,2),Inorganic Dominant=blue=RGBCompMap(:,:,3))
+% Snew.CompSize is a matrix of sizes for different componets OC BC etc (columns) for all particles (rows)
+% Snew.PartDirs is a cell array of directories where data file is found (these should all be the same).
+% Snew.RGBCompMap RGB matrices for different components (BC=red=RGBCompMap(:,:,1) ,OC=green=RGBCompMap(:,:,2),Inorganic Dominant=blue=RGBCompMap(:,:,3))
 % Snew.Maps(:,:,1) is a carbon map
 % Snew.Maps(:,:,2) is a pre/post ratio map
 % Snew.Maps(:,:,3) is a sp2 carbon map
-% Snew.BinCompMap is a cell array of binary component maps
-%                 ={carb,prepost,sp2}
+% Snew.BinCompMap is a cell array of binary component maps ={carb,prepost,sp2}
 % Snew.CompSize=[OCArea,InArea,ECArea,TotalParticleArea]
 % RCM, UOP, 2013; update RCM 7/6/2016
 
@@ -57,59 +52,62 @@ elseif isempty(test)
     return
 end
 
+[varargin, manualBinmapCheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
+[varargin, givenBinmap] = ExtractVararginValue(varargin, 'Binmap', []);
+
 [varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
+[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
+
+[varargin, carbonLimitSN] = ExtractVararginValue(varargin, 'Carbon SN Limit', 3);
+[varargin, sp2LimitSN] = ExtractVararginValue(varargin, 'SP2 SN Limit', 3);
+[varargin, preLimitSN] = ExtractVararginValue(varargin, 'Pre-edge SN Limit', 3);
+[varargin, prepostLimitSN] = ExtractVararginValue(varargin, 'PrePost SN Limit', 3);
+
 % [varargin, rootdir] = ExtractVararginValue(varargin, 'Root Directory', 0.35);
 % [varargin, sample] = ExtractVararginValue(varargin, 'Sample', 0.35);
-[varargin, manualbinmapcheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
-[varargin, binmap] = ExtractVararginValue(varargin, 'Binmap', 0.35);
 % [varargin, figsav] = ExtractVararginValue(varargin, 'Save Figures', 0);
-% [varargin, nofig] = ExtractVararginValue(varargin, 'Plot Figures', 0);
-[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
-[varargin, carbonLimitSN] = ExtractVararginValue(varagin, 'Carbon SN Limit', 3);
-[varargin, sp2LimitSN] = ExtractVararginValue(varagin, 'SP2 SN Limit', 3);
-[varargin, preLimitSN] = ExtractVararginValue(varagin, 'Pre-edge SN Threshold', 3);
-[varargin, prepostLimitSN] = ExtractVararginValue(varagin, 'PrePost SN Threshold', 3);
+% [varargin, nofig] = ExtractVararginValue(varargin, 'Plot Figures', 0)
 
 
-if isempty(varargin)
-    spThresh=0.35;
-    figsav=0;
-    nofig=0;
-    manualbinmapcheck = 'no';
-elseif length(varargin)==1
-    spThresh=varargin{1};
-    figsav=0;
-    nofig=0;
-    manualbinmapcheck = 'no';
-elseif length(varargin)==2
-    spThresh=varargin{1};
-    rootdir=varargin{2};
-    figsav=0;
-    nofig=1;
-    manualbinmapcheck = 'no';
-elseif length(varargin)==3
-    spThresh=varargin{1};
-    rootdir=varargin{2};
-    sample=varargin{3};
-    figsav=1;
-    nofig=0;
-    manualbinmapcheck = 'no';
-elseif length(varargin)==4
-    spThresh=varargin{1};
-    rootdir=varargin{2};
-    sample=varargin{3};
-    manualbinmapcheck = varargin{4};
-    figsav=1;
-    nofig=0;
-elseif length(varargin)==5
-    spThresh=varargin{1};
-    rootdir=varargin{2};
-    sample=varargin{3};
-    manualbinmapcheck = varargin{4};
-    figsav=1;
-    nofig=0;
-    binmap=varargin{5};
-end
+% if isempty(varargin)
+%     spThresh=0.35;
+%     figsav=0;
+%     nofig=0;
+%     manualbinmapcheck = 'no';
+% elseif length(varargin)==1
+%     spThresh=varargin{1};
+%     figsav=0;
+%     nofig=0;
+%     manualbinmapcheck = 'no';
+% elseif length(varargin)==2
+%     spThresh=varargin{1};
+%     rootdir=varargin{2};
+%     figsav=0;
+%     nofig=1;
+%     manualbinmapcheck = 'no';
+% elseif length(varargin)==3
+%     spThresh=varargin{1};
+%     rootdir=varargin{2};
+%     sample=varargin{3};
+%     figsav=1;
+%     nofig=0;
+%     manualbinmapcheck = 'no';
+% elseif length(varargin)==4
+%     spThresh=varargin{1};
+%     rootdir=varargin{2};
+%     sample=varargin{3};
+%     manualbinmapcheck = varargin{4};
+%     figsav=1;
+%     nofig=0;
+% elseif length(varargin)==5
+%     spThresh=varargin{1};
+%     rootdir=varargin{2};
+%     sample=varargin{3};
+%     manualbinmapcheck = varargin{4};
+%     figsav=1;
+%     nofig=0;
+%     binmap=varargin{5};
+% end
 
 SNlimit = 0;
 
@@ -157,7 +155,7 @@ post(post<0) = 0;
 % meanim(meanim>0.2)=0.2;
 % meanim(meanim<0) = 0;
 
-if strcmp(manualbinmapcheck,'yes')
+if strcmpi(manualBinmapCheck,'yes')
     rawbinmap = ~Snew.mask;
     templabelmat = bwlabel(rawbinmap,8);
     
@@ -185,9 +183,13 @@ if strcmp(manualbinmapcheck,'yes')
     binmap(templabelmat > 0) = 1;
     
     binmap = bwareaopen(binmap,20);
-elseif strcmp(manualbinmapcheck,'given')
-    %%%if this portion is run, it means binmap was already assigned in the
-    %%%varargin segment
+    
+elseif strcmpi(manualBinmapCheck,'given')
+    binmap = givenBinmap;
+    if isempty(binmap)
+        Stemp = makinbinmap(Snew);
+        binmap = Stemp.binmap;
+    end
 else
     binmap = ~Snew.mask;
     binmap = imclearborder(binmap);

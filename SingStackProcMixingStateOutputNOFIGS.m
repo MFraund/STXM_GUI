@@ -1,8 +1,7 @@
 function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(datafolder, varargin)
-
-%[S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(datafolder, threshlevel, binadjtest, givenbinmap,varargin)
-
+%% Processing of a single stack or map
 %
+% [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(datafolder, threshlevel, binadjtest, givenbinmap,varargin)
 %
 % This script processes stxm data found in "RawDir" and places it in
 % "FinDir". In FinDir, the stack data will be saved in the array Snew.
@@ -14,17 +13,33 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 %
 % Modified 9/24/15 by Matthew Fraund at University of the Pacific
 % Modified 9/23/22 by Matthew Fraund again
+% see also LoadStackRawMulti, AlignStack, OdStack, energytest,
+% CarbonMapsSuppFigs
 
 %% Input Checking Before Code
 
 %Extracting variable argument input
+%% Support for passing parameters to overwrite LoadStackRawMulti
+[varargin,givenStruct] = ExtractVararginValue(varargin,'givenStruct',[]);
+
+%% Support for passing parameters to DirLabelOrgVolFrac
 [varargin,inorganic] = ExtractVararginValue(varargin,'inorganic','NaCl');
 [varargin,organic] = ExtractVararginValue(varargin,'organic','sucrose');
-[varargin,givenStruct] = ExtractVararginValue(varargin,'givenStruct',[]);
+
+%% Support for passing parameters to OdStack
 [varargin,threshMethod] = ExtractVararginValue(varargin,'Thresh Method','adaptive');
 [varargin,gammaLevel] = ExtractVararginValue(varargin,'Gamma Level',2);
-[varargin,binAdjTest] = ExtractVararginValue(varargin,'Bin Adjust Flag',0);
-[varargin,givenBinMap] = ExtractVararginValue(varargin,'Bin Map',0);
+
+%% Support for passing parameters to CarbonMapsSuppFigs
+
+[varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
+[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
+[varargin, carbonLimitSN] = ExtractVararginValue(varargin, 'Carbon SN Limit', 3);
+[varargin, sp2LimitSN] = ExtractVararginValue(varargin, 'SP2 SN Limit', 3);
+[varargin, preLimitSN] = ExtractVararginValue(varargin, 'Pre-edge SN Limit', 3);
+[varargin, prepostLimitSN] = ExtractVararginValue(varargin, 'PrePost SN Limit', 3);
+[varargin, givenBinMap] = ExtractVararginValue(varargin,'Bin Map',[]); % Currently unused
+[varargin, manualBinmapCheck] = ExtractVararginValue(varargin,'Manual Binmap','no');
 
 %% Loading Stack Info
 if isfolder(datafolder)
@@ -92,15 +107,20 @@ Snew = energytest(Snew);
 Snew = makinbinmap(Snew);
 
 if Snew.elements.C == 1
-	
-	if binAdjTest == 1
-		Snew = CarbonMapsSuppFigs(Snew,0.35,1,1,'given',givenBinMap);
-		savedbinmap = givenBinMap;
-	else
-		Snew=CarbonMapsSuppFigs(Snew,0.35);
-	end
+    
+    Snew = CarbonMapsSuppFigs(Snew,...
+        'sp2 Threshold', spThresh,...
+        'Remove Pixel Size', rmPixelSize,...
+        'Carbon SN Limit', carbonLimitSN,...
+        'SP2 SN Limit', sp2LimitSN,...
+        'Pre-edge SN Limit',preLimitSN,...
+        'PrePost SN Limit', prepostLimitSN,...
+        'Manual Binmap',manualBinmapCheck);
+    savedbinmap = givenBinMap; % Currently Unused
+    
+    
     Snew = DirLabelOrgVolFrac(Snew,inorganic,organic);
-%     [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
+    %     [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
     Snew = CropParticles(Snew);
 	Particles = ParticlesInfo(Snew);
 	Mixing = 0;
