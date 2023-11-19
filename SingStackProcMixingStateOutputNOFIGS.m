@@ -122,7 +122,7 @@ Snew = energytest(Snew);
 
 %this is only used if a FOV is analyzed but DOESNT have carbon data (rare
 %for us).  If carbon data is present, this is overwritten
-Snew = makinbinmap(Snew);
+% Snew = makinbinmap(Snew);
 
 if Snew.elements.C == 1
     

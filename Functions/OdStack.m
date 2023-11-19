@@ -40,6 +40,9 @@ function S=OdStack(structin, varargin)
 [varargin, manualIoCheck] = ExtractVararginValue(varargin, 'Manual Io Check', 'no');
 [varargin, plotflag] = ExtractVararginValue(varargin, 'plotflag', 0);
 
+[varargin, manualBinmapCheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
+[varargin, givenBinmap] = ExtractVararginValue(varargin, 'Binmap', []);
+
 % create temporary variables
 stack=structin.spectr;
 eVlength=length(structin.eVenergy);
@@ -72,31 +75,86 @@ grayim = medfilt2(grayim);
 
 %% Thresholding method
 if strcmpi(threshMethod,'C')==1 % Constant thresholding (rarely used)
-    mask=zeros(size(grayim));
-    mask(grayim>=0.85)=1; % Detect particle free image regions
+    tempMask=zeros(size(grayim));
+    tempMask(grayim>=0.85)=1; % Detect particle free image regions
     
 elseif strcmpi(threshMethod,'O')==1 % Basic Otsu's method
     Thresh=graythresh(grayim); %% Otsu thresholding
-    mask=im2bw(grayim,Thresh); %% Give binary image
+    tempMask=im2bw(grayim,Thresh); %% Give binary image
     
 elseif strcmpi(threshMethod,'map')==1 % Thresholding for maps
     Thresh=graythresh(grayim); %% Otsu thresholding
-    mask=im2bw(grayim,Thresh); %% Give binary image
+    tempMask=im2bw(grayim,Thresh); %% Give binary image
     
 elseif strcmpi(threshMethod,'adaptive') == 1 % Adaptive thresholding
     T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
-	mask = imbinarize(grayim,T_ad);
+	tempMask = imbinarize(grayim,T_ad);
 	%mask = bwareaopen(mask, rmPixelSize, 8);
 	
 else % Thresholding method not defined
     disp('Error! No thresholding method defined! Input structure not converted!')
     return
 end
+
+se2 = strel('disk', 5);
+maskIzero = imdilate(tempMask,se2);
 %TODO - use bwareaopen on all outputs to thresholding
-mask = bwareaopen(mask, rmPixelSize, 8);
- S.mask = ~mask;
- S.gamma = gammaLevel;
- 
+% binmap = bwareaopen(tempMask, rmPixelSize, 8);
+S.mask = ~maskIzero;
+S.gamma = gammaLevel;
+
+%% Determing Binmap
+if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
+    rawbinmap = tempMask;
+    rawbinmap = bwareaopen(rawbinmap, rmPixelSize, 8);
+    templabelmat = bwlabel(rawbinmap,8);
+    
+    meanfig = figure;
+    imagesc(mean(S.spectr,3));
+    movegui(meanfig,'west');
+    
+    binfig = figure;
+    imagesc(rawbinmap);
+    colormap('gray');
+    movegui(binfig,'east');
+    
+    title('Pick Particles to Remove, Right Click on Last Point');
+    [xlist, ylist] = getpts(binfig);
+    
+    close(binfig);
+    close(meanfig);
+    
+    for i = 1:length(xlist)
+        currpartlabel = templabelmat(round(ylist(i)),round(xlist(i)));
+        templabelmat(templabelmat == currpartlabel) = 0;
+    end
+    
+    binmap = templabelmat;
+    binmap(templabelmat > 0) = 1;
+    
+    %binmap = bwareaopen(binmap, rmPixelSize, 8);
+    
+elseif strcmpi(manualBinmapCheck,'given')
+    binmap = givenBinmap;
+    if isempty(binmap) | binmap == 0
+        Stemp = makinbinmap(Snew);
+        binmap = Stemp.binmap;
+    end
+else
+    binmap = tempMask;
+    binmap = imclearborder(binmap);
+    binmap = bwareaopen(binmap, rmPixelSize, 8);
+end
+
+%Define Label Matrix
+LabelMat=bwlabel(binmap,8);
+
+S.LabelMat = LabelMat;
+S.NumParticles = max(max(LabelMat));
+S.binmap = binmap;
+S = ParticleSize(S);
+
+
 %% Izero extraction
 
 %%%%% this section replaced with an optional input
@@ -150,9 +208,9 @@ else
     % loop over energy range of stack, calculate average vor each energy -> return_spec
     for cnt=1:eVlength
         buffer=stack(:,:,cnt);
-        Izero(cnt,2)=mean(buffer(mask==1));
-        stdIzero(cnt,2) = std(buffer(mask==1));
-        numIzero = sum(sum(mask));
+        Izero(cnt,2)=mean(buffer(maskIzero==1));
+        stdIzero(cnt,2) = std(buffer(maskIzero==1));
+        numIzero = sum(sum(maskIzero));
         errIzero(cnt,2) = 1.96 .* stdIzero(cnt,2) ./ sqrt(numIzero); %1.96 comes from t-distribution with an alpha level of 0.05
         clear buffer
     end
@@ -193,7 +251,7 @@ if plotflag==1
     
     
     subplot(2,2,3)
-    imagesc(xAxislabel,yAxislabel,mask)
+    imagesc(xAxislabel,yAxislabel,maskIzero)
     colorbar
     axis image
     title('Izero Region Mask')

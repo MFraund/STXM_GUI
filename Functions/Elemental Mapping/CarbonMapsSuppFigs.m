@@ -156,63 +156,56 @@ post(post<0) = 0;
 % meanim(meanim>0.2)=0.2;
 % meanim(meanim<0) = 0;
 
+%%%%%--------------------------------%%%%%--------------------------------
 % Allowing for manualBinmapCheck to == 1 is for backwards compatibility
 % with other versions
-if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
-    rawbinmap = ~Snew.mask;
-    templabelmat = bwlabel(rawbinmap,8);
-    
-    meanfig = figure;
-    imagesc(mean(Snew.spectr,3));
-    movegui(meanfig,'west');
-    
-    binfig = figure;
-    imagesc(rawbinmap);
-    colormap('gray');
-    movegui(binfig,'east');
-    
-    title('Pick Particles to Remove, Right Click on Last Point');
-    [xlist, ylist] = getpts(binfig);
-    
-    close(binfig);
-    close(meanfig);
-    
-    for i = 1:length(xlist)
-        currpartlabel = templabelmat(round(ylist(i)),round(xlist(i)));
-        templabelmat(templabelmat == currpartlabel) = 0;
-    end
-    
-    binmap = templabelmat;
-    binmap(templabelmat > 0) = 1;
-    
-    binmap = bwareaopen(binmap, rmPixelSize, 8);
-    
-elseif strcmpi(manualBinmapCheck,'given')
-    binmap = givenBinmap;
-    if isempty(binmap) | binmap == 0
-        Stemp = makinbinmap(Snew);
-        binmap = Stemp.binmap;
-    end
-else
-    binmap = ~Snew.mask;
-    binmap = imclearborder(binmap);
-    binmap = bwareaopen(binmap, rmPixelSize, 8);
-end
-
-%Define Label Matrix
-LabelMat=bwlabel(binmap,8);
-
-%%% Filter noise that appears as Small Particles
-% for i=1:max(max(LabelMat))
-%     [a1,b1]=find(LabelMat==i);
-%     linidx1=sub2ind(size(LabelMat),a1,b1);
-%     if length(linidx1)<7
-%         LabelMat(linidx1)=0;
+% if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
+%     rawbinmap = ~Snew.mask;
+%     templabelmat = bwlabel(rawbinmap,8);
+%     
+%     meanfig = figure;
+%     imagesc(mean(Snew.spectr,3));
+%     movegui(meanfig,'west');
+%     
+%     binfig = figure;
+%     imagesc(rawbinmap);
+%     colormap('gray');
+%     movegui(binfig,'east');
+%     
+%     title('Pick Particles to Remove, Right Click on Last Point');
+%     [xlist, ylist] = getpts(binfig);
+%     
+%     close(binfig);
+%     close(meanfig);
+%     
+%     for i = 1:length(xlist)
+%         currpartlabel = templabelmat(round(ylist(i)),round(xlist(i)));
+%         templabelmat(templabelmat == currpartlabel) = 0;
 %     end
+%     
+%     binmap = templabelmat;
+%     binmap(templabelmat > 0) = 1;
+%     
+%     binmap = bwareaopen(binmap, rmPixelSize, 8);
+%     
+% elseif strcmpi(manualBinmapCheck,'given')
+%     binmap = givenBinmap;
+%     if isempty(binmap) | binmap == 0
+%         Stemp = makinbinmap(Snew);
+%         binmap = Stemp.binmap;
+%     end
+% else
+%     binmap = ~Snew.mask;
+%     binmap = imclearborder(binmap);
+%     binmap = bwareaopen(binmap, rmPixelSize, 8);
 % end
-% LabelMat(LabelMat>0)=1;
-% LabelMat=bwlabel(LabelMat);
+% 
+% %Define Label Matrix
+% LabelMat=bwlabel(binmap,8);
 
+%%%%%--------------------------------
+binmap = Snew.binmap;
+LabelMat = Snew.LabelMat;
 %%% Assign Particle Serial Numbers and directories
 % NumPart=max(max(LabelMat));
 % PartZero=str2double(strcat(Snew.particle(5:end),'0000'));
@@ -455,14 +448,14 @@ else
 end
 
 %%%Define outputs
-Snew.LabelMat=LabelMat;
-Snew.NumParticles = max(max(LabelMat));
-Snew.PartLabel=PartLabel;
+% Snew.LabelMat=LabelMat;
+% Snew.NumParticles = max(max(LabelMat));
+% Snew.PartLabel=PartLabel;
 % Snew.PartSN = PartSN';
-binmap=zeros(size(LabelMat));
-binmap(LabelMat>0)=1;
-Snew.binmap=binmap;
-Snew=ParticleSize(Snew);
+% binmap=zeros(size(LabelMat));
+% binmap(LabelMat>0)=1;
+% Snew.binmap=binmap;
+% Snew=ParticleSize(Snew);
 XSiz=Snew.Xvalue/MatSiz(1);
 YSiz=Snew.Yvalue/MatSiz(2);
 CompSize=CompSize.*(XSiz*YSiz); %% Area of components in um^2
