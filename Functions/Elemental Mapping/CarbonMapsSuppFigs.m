@@ -450,7 +450,7 @@ end
 %%%Define outputs
 % Snew.LabelMat=LabelMat;
 % Snew.NumParticles = max(max(LabelMat));
-% Snew.PartLabel=PartLabel;
+Snew.PartLabel=PartLabel;
 % Snew.PartSN = PartSN';
 % binmap=zeros(size(LabelMat));
 % binmap(LabelMat>0)=1;

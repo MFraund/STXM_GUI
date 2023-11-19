@@ -1323,7 +1323,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 end
                 
                 Mask = Dataset.(Datasetnames{readyvalue}).Snew.mask;
-                binmap = ~Dataset.(Datasetnames{readyvalue}).Snew.binmap;
+                binmap = Dataset.(Datasetnames{readyvalue}).Snew.binmap;
                 imagebuffer=mean(stack,3);
                 RgbMat = Dataset.(Datasetnames{readyvalue}).Snew.RGBCompMap;
                 carb = Dataset.(Datasetnames{readyvalue}).Snew.Maps(:,:,1);
@@ -2622,7 +2622,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         plotimshowpair();
         
         function plotimshowpair()
-            imshowpair(specmean,~Snew.mask,'Parent',figpairax,'method','montage');
+            imshowpair(specmean,Snew.binmap,'Parent',figpairax,'method','montage');
             
         end
         
@@ -2632,7 +2632,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
-                'Gamma Level', currthreshval);
+                'Gamma Level', currthreshval,...
+                'Clear Binmap Border', false);
             
             plotimshowpair();
         end
@@ -2645,7 +2646,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Gamma Level', currthreshval,...
-                'Thresh Method', threshMethod);
+                'Thresh Method', threshMethod,...
+                'Clear Binmap Border', false);
             
             plotimshowpair();
         end
@@ -2663,64 +2665,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 'Manual Io Check', manualIorecheck);
 
             Snew = energytest(Snew);
-            Snew = makinbinmap(Snew);
+%             Snew = makinbinmap(Snew);
             
             
             if Snew.elements.C == 1
-                Snew = CarbonMapsSuppFigs(Snew,...
-                    'sp2 Threshold', 0.35,...
-                    'Remove Pixel Size', 7,...
-                    'Carbon SN Limit', 3,...
-                    'SP2 SN Limit', 3,...
-                    'Pre-edge SN Limit',3,...
-                    'PrePost SN Limit', 3,...
-                    'Manual Binmap','yes');
+                Snew = CarbonMapsSuppFigs(Snew);
 
                 Snew = DirLabelOrgVolFrac(Snew);
                 
-                try
-					cd(datafolder);
-				catch
-					C_Users_Dir = dir('C:\Users');
-					for c = 1:length(C_Users_Dir)
-						katyidx = strfind(C_Users_Dir(c).name,'Katy-Ann');
-						uopidx = strfind(C_Users_Dir(c).name,'Emily');
-						matthewidx = strfind(C_Users_Dir(c).name,'Matthew Fraund');
-						muleidx = strfind(C_Users_Dir(c).name,'Mulecenter78');
-						
-						if ~isempty(katyidx)
-							currcomp = 'C:\Users\Katy-Ann';
-							break
-						elseif ~isempty(uopidx)
-							currcomp = 'D:\Users\Emily';
-							break
-						elseif ~isempty(matthewidx)
-							currcomp = 'D:';
-							break
-						elseif ~isempty(muleidx)
-							currcomp = 'E:';
-							break
-						end
-					end
-					
-					katyidx = strfind(datafolder,'C:\Users\Katy-Ann');
-					uopidx = strfind(datafolder,'D:\Users\Emily');
-					%matthewidx = strfind(datafolder,'
-					
-					if ~isempty(katyidx)
-						datafolder(1:17) = [];
-						
-					elseif ~isempty(uopidx)
-						datafolder(1:14) = [];
-						
-					else
-						datafolder(1:2) = [];
-					end
-					datafolder = [currcomp,datafolder];
-				end
-				
-				
-				
 				try
 					cd(datafolder);
 				catch
@@ -2790,31 +2742,28 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function hbinmap_adjust_callback(~,~)
         readyval = get(hlistready,'Value');
         Snew = Dataset.(Datasetnames{readyval}).Snew;
-        S = Dataset.(Datasetnames{readyval}).S;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
-
+        currthreshval = Dataset.(Datasetnames{readyval}).threshlevel;
+        S = Dataset.(Datasetnames{readyval}).S;
+        
+        Snew = OdStack(S,...
+            'Auto Gamma', 'no',...
+            'Gamma Level', currthreshval,...
+            'Manual Binmap','yes',...
+            'Clear Binmap Border', false);
+        
+        Snew = energytest(Snew);
+        
         if Snew.elements.C == 1
-            Snew=CarbonMapsSuppFigs(Snew,0.35,1,1,'yes');
+            Snew = CarbonMapsSuppFigs(Snew);
+            
             Snew = DirLabelOrgVolFrac(Snew);
             
             try
                 cd(datafolder);
             catch
-                katyidx = strfind(datafolder,'C:\Users\Katy-Ann');
-                uopidx = strfind(datafolder,'D:\Users\Emily');
-                
-                if ~isempty(katyidx)
-                    datafolder(1:17) = [];
-                    datafolder = ['D:\Users\Emily',datafolder];
-                    
-                elseif ~isempty(uopidx)
-                    datafolder(1:14) = [];
-                    datafolder = ['C:\Users\Katy-Ann',datafolder];
-                else
-                    disp('previously saved directory doesnt exist on this computer');
-                end
+                disp([datafolder,' not found on this computer, reanalyze the raw data for this folder']);
             end
-            
             
             tempdir = dir;
             cnt = 1;
@@ -2853,16 +2802,22 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
             Snew = CNOeleMaps(Snew);
         end
-
+        
         
         mapstest = 1;
-        binadjtest = 1;
+        threshlevel = currthreshval;
         savedbinmap = Snew.binmap;
-        save(['../F',S.particle],'Snew','S','Mixing','Particles','datafolder','mapstest','binadjtest','savedbinmap');
+        binadjtest = 1;
         
-        Dataset.(Datasetnames{readyval}).binadjtest = 1;
+        save(['../F',S.particle],'Snew','S','Mixing','Particles','datafolder','mapstest','threshlevel','savedbinmap','binadjtest','-v7.3');
         
-        hanalyze_callback();
+        
+        Dataset.(Datasetnames{readyval}).S = S;
+        Dataset.(Datasetnames{readyval}).Snew = Snew;
+        Dataset.(Datasetnames{readyval}).Mixing = Mixing;
+        Dataset.(Datasetnames{readyval}).Particles = Particles;
+        Dataset.(Datasetnames{readyval}).Directory = datafolder;
+        hselect_callback();
     end
 
     function hfixAlign_callback(~,~)

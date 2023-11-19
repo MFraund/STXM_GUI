@@ -42,6 +42,7 @@ function S=OdStack(structin, varargin)
 
 [varargin, manualBinmapCheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
 [varargin, givenBinmap] = ExtractVararginValue(varargin, 'Binmap', []);
+[varargin, clearBinmapBorder_bool] = ExtractVararginValue(varargin, 'Clear Binmap Border', true);
 
 % create temporary variables
 stack=structin.spectr;
@@ -68,7 +69,7 @@ se = strel('disk', 30);
 topim = imtophat(grayim, se);
 
 % Gamma adjust
-[grayim, gammaLevel] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', gammaLevel);
+[grayim, gammaLevel] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', gammaLevel, 'Remove Pixel Size', rmPixelSize);
 
 % Median filtering to get rid of noise
 grayim = medfilt2(grayim);
@@ -110,7 +111,7 @@ if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
     templabelmat = bwlabel(rawbinmap,8);
     
     meanfig = figure;
-    imagesc(mean(S.spectr,3));
+    imagesc(imagebuffer);
     movegui(meanfig,'west');
     
     binfig = figure;
@@ -142,12 +143,16 @@ elseif strcmpi(manualBinmapCheck,'given')
     end
 else
     binmap = tempMask;
-    binmap = imclearborder(binmap);
     binmap = bwareaopen(binmap, rmPixelSize, 8);
+end
+
+if clearBinmapBorder_bool
+    binmap = imclearborder(binmap,8);
 end
 
 %Define Label Matrix
 LabelMat=bwlabel(binmap,8);
+
 
 S.LabelMat = LabelMat;
 S.NumParticles = max(max(LabelMat));
