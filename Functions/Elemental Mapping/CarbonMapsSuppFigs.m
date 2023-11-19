@@ -52,9 +52,7 @@ elseif isempty(test)
     return
 end
 
-[varargin, manualBinmapCheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
-[varargin, givenBinmap] = ExtractVararginValue(varargin, 'Binmap', []);
-
+%% Input Checking
 [varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
 [varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
 
@@ -62,6 +60,9 @@ end
 [varargin, sp2LimitSN] = ExtractVararginValue(varargin, 'SP2 SN Limit', 3);
 [varargin, preLimitSN] = ExtractVararginValue(varargin, 'Pre-edge SN Limit', 3);
 [varargin, prepostLimitSN] = ExtractVararginValue(varargin, 'PrePost SN Limit', 3);
+
+[varargin, manualBinmapCheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
+[varargin, givenBinmap] = ExtractVararginValue(varargin, 'Binmap', []);
 
 % [varargin, rootdir] = ExtractVararginValue(varargin, 'Root Directory', 0.35);
 % [varargin, sample] = ExtractVararginValue(varargin, 'Sample', 0.35);
@@ -155,7 +156,9 @@ post(post<0) = 0;
 % meanim(meanim>0.2)=0.2;
 % meanim(meanim<0) = 0;
 
-if strcmpi(manualBinmapCheck,'yes')
+% Allowing for manualBinmapCheck to == 1 is for backwards compatibility
+% with other versions
+if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
     rawbinmap = ~Snew.mask;
     templabelmat = bwlabel(rawbinmap,8);
     
@@ -182,33 +185,33 @@ if strcmpi(manualBinmapCheck,'yes')
     binmap = templabelmat;
     binmap(templabelmat > 0) = 1;
     
-    binmap = bwareaopen(binmap,20);
+    binmap = bwareaopen(binmap, rmPixelSize, 8);
     
 elseif strcmpi(manualBinmapCheck,'given')
     binmap = givenBinmap;
-    if isempty(binmap)
+    if isempty(binmap) | binmap == 0
         Stemp = makinbinmap(Snew);
         binmap = Stemp.binmap;
     end
 else
     binmap = ~Snew.mask;
     binmap = imclearborder(binmap);
-    binmap = bwareaopen(binmap,20);
+    binmap = bwareaopen(binmap, rmPixelSize, 8);
 end
 
 %Define Label Matrix
 LabelMat=bwlabel(binmap,8);
 
 %%% Filter noise that appears as Small Particles
-for i=1:max(max(LabelMat))
-    [a1,b1]=find(LabelMat==i);
-    linidx1=sub2ind(size(LabelMat),a1,b1);
-    if length(linidx1)<7
-        LabelMat(linidx1)=0;
-    end
-end
-LabelMat(LabelMat>0)=1;
-LabelMat=bwlabel(LabelMat);
+% for i=1:max(max(LabelMat))
+%     [a1,b1]=find(LabelMat==i);
+%     linidx1=sub2ind(size(LabelMat),a1,b1);
+%     if length(linidx1)<7
+%         LabelMat(linidx1)=0;
+%     end
+% end
+% LabelMat(LabelMat>0)=1;
+% LabelMat=bwlabel(LabelMat);
 
 %%% Assign Particle Serial Numbers and directories
 % NumPart=max(max(LabelMat));
@@ -240,7 +243,7 @@ carb1 = imgaussfilt(carb1);
 Snew.TotC=carb1;
 carbmask=carb1;
 carbmask(carbmask>0)=1;
-carbmask = bwareaopen(carbmask,3);
+carbmask = bwareaopen(carbmask,3, 8);
 carbmask=medfilt2(carbmask);
 
 %% Inorganic Map %%%%%%%%%%%%%%%%%%%%%%%%   Inorganic Map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,7 +289,7 @@ prepost(prepost<inorgthresh)=0;
 prepostmask=prepost;
 prepostmask = medfilt2(prepost,[3,3]);
 prepostmask(prepost>0)=1;
-prepostmask = bwareaopen(prepostmask,11); %removing small particles
+prepostmask = bwareaopen(prepostmask,11, 8); %removing small particles
 prepostmask = prepostmask .* premask;
 %% SP2 Map %%%%%%%%%%%%%%%%%%%%%%%% SP2 Map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % HOPG(285.25)=0.8656; HOPG(310)=0.4512;
@@ -326,23 +329,23 @@ if ~isempty(sp2idx)
     
     finSp2mask=sp2;
     finSp2mask = medfilt2(finSp2mask);
-    finSp2mask = bwareaopen(finSp2mask,8);
+    finSp2mask = bwareaopen(finSp2mask,8, 8);
     finSp2mask(finSp2mask>0)=1;
     
     % figure,imagesc(finSp2mask),colormap gray
     
     % get rid of small few pixel regions
-    finSp2mask=bwlabel(finSp2mask,8);
-
-    for i=1:max(max(finSp2mask))
-        [a1,b1]=find(finSp2mask==i);
-        linidx1=sub2ind(size(finSp2mask),a1,b1);
-        if length(linidx1)<7
-            finSp2mask(linidx1)=0;
-        end
-    end
-    finSp2mask(finSp2mask>0)=1;
-    bw=im2bw(finSp2mask);
+%     finSp2mask=bwlabel(finSp2mask,8);
+% 
+%     for i=1:max(max(finSp2mask))
+%         [a1,b1]=find(finSp2mask==i);
+%         linidx1=sub2ind(size(finSp2mask),a1,b1);
+%         if length(linidx1)<7
+%             finSp2mask(linidx1)=0;
+%         end
+%     end
+%     finSp2mask(finSp2mask>0)=1;
+%     bw=im2bw(finSp2mask);
     % figure,imagesc(bw),colormap gray
     %ImStruct=regionprops(bw,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexHull');
     ImStruct=regionprops(bw,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexArea','Area');

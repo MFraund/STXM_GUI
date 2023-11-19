@@ -1167,13 +1167,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                
                 disp(threshMethod);
                 %-------------------------------%---------------------------------%--------------------------------------%--------------------------------------%%-------------------------------%---------------------------------%--------------------------------------%
-                % [tempdataset] = MixingStatesforGUI(filedirs(j),'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap, 'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);
-                if binadjtest == 1
-                    binadjtest = 'yes';
-                else
-                    binadjtest = 'no';
-                end
-                
+                % [tempdataset] = MixingStatesforGUI(filedirs(j),'Gamma Level', threshlevel, 'Bin Adjust Flag', binadjtest, 'Bin Map', savedbinmap, 'inorganic',inorganic,'organic',organic, 'Thresh Method', threshMethod);                
                 [currS, currSnew, currMixing, currParticles] = SingStackProcMixingStateOutputNOFIGS(filedirs{j},...
                     'inorganic',inorganic,...
                     'organic',organic,...
