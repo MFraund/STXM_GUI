@@ -329,8 +329,8 @@ if ~isempty(sp2idx)
     
     finSp2mask=sp2;
     finSp2mask = medfilt2(finSp2mask);
-    finSp2mask = bwareaopen(finSp2mask,8, 8);
     finSp2mask(finSp2mask>0)=1;
+    finSp2mask = bwareaopen(finSp2mask,8, 8);
     
     % figure,imagesc(finSp2mask),colormap gray
     
@@ -348,7 +348,7 @@ if ~isempty(sp2idx)
 %     bw=im2bw(finSp2mask);
     % figure,imagesc(bw),colormap gray
     %ImStruct=regionprops(bw,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexHull');
-    ImStruct=regionprops(bw,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexArea','Area');
+    ImStruct=regionprops(finSp2mask,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexArea','Area');
     Ecc = reshape([ImStruct.Eccentricity],size(ImStruct));
     Maj=reshape([ImStruct.MajorAxisLength],size(ImStruct));
     Min=reshape([ImStruct.MinorAxisLength],size(ImStruct));

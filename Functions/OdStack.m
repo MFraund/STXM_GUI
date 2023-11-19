@@ -1,4 +1,4 @@
-function S=OdStack(structin, method, varargin)
+function S=OdStack(structin, varargin)
 %function S=OdStack(structin, method, plotflag,     manualiocheck,         imgadjust_gamma)
 %                   struct    'O'      0 or 1     'no' or 'yes'   default = 2
 %Automated STXM raw data to optical density (OD) conversion.
@@ -27,15 +27,18 @@ function S=OdStack(structin, method, varargin)
 %Making third input (plotflag) optional, defaulting to no figure
 
 %% Extracting varargin variables and input checking
-if nargin == 1
-	method = 'O';
-end
+% if nargin == 1
+% 	method = 'O';
+% end
 
-[varargin, plotflag] = ExtractVararginValue(varargin, 'plotflag', 0);
-[varargin, manualiocheck] = ExtractVararginValue(varargin, 'manualiocheck', 'no');
-[varargin, imadjust_gamma] = ExtractVararginValue(varargin, 'imadjust_gamma', 2);
 [varargin, autoGammaFlag] = ExtractVararginValue(varargin, 'Auto Gamma', 1);
+[varargin, gammaLevel] = ExtractVararginValue(varargin, 'Gamma Level', 2);
 [varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
+
+[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
+
+[varargin, manualIoCheck] = ExtractVararginValue(varargin, 'Manual Io Check', 'no');
+[varargin, plotflag] = ExtractVararginValue(varargin, 'plotflag', 0);
 
 % create temporary variables
 stack=structin.spectr;
@@ -62,36 +65,37 @@ se = strel('disk', 30);
 topim = imtophat(grayim, se);
 
 % Gamma adjust
-[grayim, imadjust_gamma] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', imadjust_gamma);
+[grayim, gammaLevel] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', gammaLevel);
 
 % Median filtering to get rid of noise
 grayim = medfilt2(grayim);
 
 %% Thresholding method
-if strcmpi(method,'C')==1 % Constant thresholding (rarely used)
+if strcmpi(threshMethod,'C')==1 % Constant thresholding (rarely used)
     mask=zeros(size(grayim));
     mask(grayim>=0.85)=1; % Detect particle free image regions
     
-elseif strcmpi(method,'O')==1 % Basic Otsu's method
+elseif strcmpi(threshMethod,'O')==1 % Basic Otsu's method
     Thresh=graythresh(grayim); %% Otsu thresholding
     mask=im2bw(grayim,Thresh); %% Give binary image
     
-elseif strcmpi(method,'map')==1 % Thresholding for maps
+elseif strcmpi(threshMethod,'map')==1 % Thresholding for maps
     Thresh=graythresh(grayim); %% Otsu thresholding
     mask=im2bw(grayim,Thresh); %% Give binary image
     
-elseif strcmpi(method,'adaptive') == 1 % Adaptive thresholding
+elseif strcmpi(threshMethod,'adaptive') == 1 % Adaptive thresholding
     T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
 	mask = imbinarize(grayim,T_ad);
-	mask = bwareaopen(mask, 8);
+	%mask = bwareaopen(mask, rmPixelSize, 8);
 	
 else % Thresholding method not defined
     disp('Error! No thresholding method defined! Input structure not converted!')
     return
 end
 %TODO - use bwareaopen on all outputs to thresholding
+mask = bwareaopen(mask, rmPixelSize, 8);
  S.mask = ~mask;
- S.gamma = imadjust_gamma;
+ S.gamma = gammaLevel;
  
 %% Izero extraction
 
@@ -101,7 +105,7 @@ end
 % manualiocheck = 'no';
 % manualiocheck = inputdlg('Do you want to manually define an Io region? (Cancel continues with automatic method)','Manual Io Check',1,{'yes'});
 
-if strcmpi(manualiocheck,'yes') == 1
+if strcmpi(manualIoCheck,'yes') == 1
     avgstackfig = figure('Name','Define an Io region','NumberTitle','off');
     imagesc(imagebuffer);
     colormap gray;
@@ -132,7 +136,7 @@ if strcmpi(manualiocheck,'yes') == 1
         clear buffer
     end
 
-elseif strcmpi(manualiocheck,'given') == 1  %%%this part was considered but is extra work and was put on the back burner
+elseif strcmpi(manualIoCheck,'given') == 1  %%%this part was considered but is extra work and was put on the back burner
     
 else
     Izero=zeros(eVlength,2);

@@ -1186,7 +1186,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 tempdataset.(currfov).Snew = currSnew;
                 tempdataset.(currfov).Mixing = currMixing;
                 tempdataset.(currfov).Particles = currParticles;
-                tempdataset.(currfov).Directory = filedirs(j);
+                tempdataset.(currfov).Directory = filedirs{j};
                 %-------------------------------%---------------------------------%--------------------------------------%--------------------------------------%%-------------------------------%---------------------------------%--------------------------------------%
                 Dataset.(currfov) = tempdataset.(currfov);
                 
@@ -2629,12 +2629,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         function hthreshslide_callback(~,~)
             currthreshval = get(hthreshslide,'Value');
             set(hthreshtext,'String',num2str(currthreshval));
-			
-			if length(S.eVenergy) >= 20
-				Snew = OdStack(S,'O','Auto Gamma', 'no','imadjust_gamma',currthreshval);
-			else
-				Snew = OdStack(S,'adaptive','Auto Gamma', 'no','imadjust_gamma',currthreshval);
-			end
+            
+            Snew = OdStack(S,...
+                'Auto Gamma', 'no',...
+                'Gamma Level', currthreshval);
             
             plotimshowpair();
         end
@@ -2643,11 +2641,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currthreshval = 2;
             set(hthreshslide,'Value',currthreshval);
             set(hthreshtext,'String',num2str(currthreshval));
-			if length(S.eVenergy) >= 20
-				Snew = OdStack(S,'O','Auto Gamma', 'no','imadjust_gamma',currthreshval);
-			else
-				Snew = OdStack(S,'adaptive','Auto Gamma', 'no','imadjust_gamma',currthreshval);
-			end
+            
+            Snew = OdStack(S,...
+                'Auto Gamma', 'no',...
+                'Gamma Level', currthreshval,...
+                'Thresh Method', threshMethod);
             
             plotimshowpair();
         end
@@ -2659,35 +2657,28 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
-            if strcmp(manualIorecheck,'no') == 1
-				if length(S.eVenergy) >= 20
-					Snew = OdStack(S,'O','Auto Gamma', 'no','imadjust_gamma',currthreshval);
-				else
-					Snew = OdStack(S,'adaptive','Auto Gamma', 'no','imadjust_gamma',currthreshval);
-				end
-			else
-				if length(S.eVenergy) >= 20
-					Snew = OdStack(S,'O','Auto Gamma', 'no','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
-				else
-					Snew = OdStack(S,'adaptive','Auto Gamma', 'no','manualiocheck','yes','imadjust_gamma',currthreshval); %Allows manual selection of Io region
-				end
-            end
-            
-            
+            Snew = OdStack(S,...
+                'Auto Gamma', 'no',...
+                'Gamma Level', currthreshval,...
+                'Manual Io Check', manualIorecheck);
+
             Snew = energytest(Snew);
             Snew = makinbinmap(Snew);
             
             
             if Snew.elements.C == 1
-%                 if Dataset.(Datasetnames{readyval}).binadjtest == 1;
-                    Snew=CarbonMapsSuppFigs(Snew,0.35,1,1,'yes');
+                Snew = CarbonMapsSuppFigs(Snew,...
+                    'sp2 Threshold', 0.35,...
+                    'Remove Pixel Size', 7,...
+                    'Carbon SN Limit', 3,...
+                    'SP2 SN Limit', 3,...
+                    'Pre-edge SN Limit',3,...
+                    'PrePost SN Limit', 3,...
+                    'Manual Binmap','yes');
 
-%                 else
-%                     Snew=CarbonMapsSuppFigs(Snew,0.35,1,1,'no');
-%                 end
                 Snew = DirLabelOrgVolFrac(Snew);
                 
-				try
+                try
 					cd(datafolder);
 				catch
 					C_Users_Dir = dir('C:\Users');

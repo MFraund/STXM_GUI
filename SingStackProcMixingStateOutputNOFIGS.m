@@ -28,12 +28,15 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 
 %% Support for passing parameters to OdStack
 [varargin,threshMethod] = ExtractVararginValue(varargin,'Thresh Method','adaptive');
+[varargin, autoGammaFlag] = ExtractVararginValue(varargin, 'Auto Gamma', 1);
 [varargin,gammaLevel] = ExtractVararginValue(varargin,'Gamma Level',2);
+[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
+[varargin, manualIoCheck] = ExtractVararginValue(varargin, 'Manual Io Check', 'no');
+
 
 %% Support for passing parameters to CarbonMapsSuppFigs
 
 [varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
-[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
 [varargin, carbonLimitSN] = ExtractVararginValue(varargin, 'Carbon SN Limit', 3);
 [varargin, sp2LimitSN] = ExtractVararginValue(varargin, 'SP2 SN Limit', 3);
 [varargin, preLimitSN] = ExtractVararginValue(varargin, 'Pre-edge SN Limit', 3);
@@ -88,16 +91,31 @@ end
 S = AlignStack(S);
 
 %% OdStack
-if length(S.eVenergy)<3 %just pre/post map
-% 	Snew=OdStack(S,'map',0,'no',threshlevel);
-	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
-	
-elseif length(S.eVenergy) >= 20 %must be a stack then
-	Snew = OdStack(S, 'O', 'Auto Gamma','yes','imadjust_gamma',gammaLevel);
-else
-% 	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
-	Snew=OdStack(S,threshMethod, 'Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
+
+if length(S.eVenergy) < 3
+    threshMethod = 'map';
+elseif length(S.eVenergy) >= 20
+    threshMethod = 'O';
 end
+
+Snew = OdStack(S,...
+    'Auto Gamma', autoGammaFlag,...
+    'Gamma Level', gammaLevel,...
+    'Thresh Method', threshMethod,...
+    'Remove Pixel Size', rmPixelSize,...
+    'Manual Io Check', manualIoCheck...
+    );
+
+% if length(S.eVenergy)<3 %just pre/post map
+% % 	Snew=OdStack(S,'map',0,'no',threshlevel);
+% 	Snew=OdStack(S,'map','Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
+% 	
+% elseif length(S.eVenergy) >= 20 %must be a stack then
+% 	Snew = OdStack(S, 'O', 'Auto Gamma','yes','imadjust_gamma',gammaLevel);
+% else
+% % 	Snew=OdStack(S,'adaptive',0,'no',threshlevel);
+% 	Snew=OdStack(S,threshMethod, 'Auto Gamma','yes', 'imadjust_gamma', gammaLevel);
+% end
 
 %% Elemental Maps (CarbonMaps)
 Snew = energytest(Snew);
