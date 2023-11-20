@@ -49,7 +49,24 @@ function [S, Snew, Mixing, Particles] = SingStackProcMixingStateOutputNOFIGS(dat
 if isfolder(datafolder)
     cd(datafolder) %% move to raw data folder
 elseif isfile(datafolder)
-    cd(fileparts(datafolder));
+    [currFolder,currFile,currExt] = fileparts(datafolder);
+    
+    if contains(currExt,'.mat')
+        fovname = [currFile(2:end), currExt]; %removing the 'F' in front of saved files
+        try
+            loadedDataFolder = load(datafolder, 'datafolder');
+            datafolder = loadedDataFolder.datafolder;
+            cd(datafolder);
+            currdir = dir(datafolder);
+        catch
+            currdir = dir(currFolder);
+        end
+        
+    elseif contains(currExt,'.hdr') | contains(currExt,'.xim')
+        containingFolder = fullfile(fileparts(filedirs{j}),'..');
+        currdir = dir(containingFolder);
+    end
+    %cd(fileparts(datafolder));
 end
 foldstruct = dir; % makes a structure out of all folders
 

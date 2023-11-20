@@ -1039,9 +1039,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
                 if contains(currExt,'.mat')
                     fovname{j} = [currFile(2:end), currExt]; %removing the 'F' in front of saved files
-                    currdir = dir(currFolder);
+                    try 
+                        loadedDataFolder = load(filedirs{j}, 'datafolder');
+                        currdir = dir(loadedDataFolder.datafolder);
+                    catch
+                        currdir = dir(currFolder);
+                    end
                     
-                elseif contains(currExt,'.hdr.') | contains(currExt,'.xim')
+                elseif contains(currExt,'.hdr') | contains(currExt,'.xim')
                     containingFolder = fullfile(fileparts(filedirs{j}),'..');
                     currdir = dir(containingFolder);
                 end
@@ -1104,7 +1109,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 end
                 
                 if hasfield(tempdataset, 'threshlevel',1)
-                    Dataset.(currfov).threshlevel = tempdataset.threshlevel;
+                    Dataset.(currfov).threshlevel = tempdataset.Snew.gamma;
                 end
                 
                 if hasfield(tempdataset, 'savedbinmap',1)
@@ -2485,7 +2490,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         readyval = get(hlistready,'Value');
         S = Dataset.(Datasetnames{readyval}).S;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;       
-        currthreshval = Dataset.(Datasetnames{readyval}).threshlevel;
+        currthreshval = Dataset.(Datasetnames{readyval}).Snew.gamma;
         Snew = OdStack(S,'adaptive','manualiocheck','yes','Auto Gamma', 'no','imadjust_gamma',currthreshval); %Allows manual selection of Io region
         Snew = energytest(Snew);
 %         Snew = makinbinmap(Snew);
@@ -2573,7 +2578,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         specmean = mean(Snew.spectr,3);
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
 		try
-			beginningthreshlevel = Dataset.(Datasetnames{readyval}).threshlevel;
+% 			beginningthreshlevel = Dataset.(Datasetnames{readyval}).threshlevel;
+            beginningthreshlevel = Snew.gamma;
 		catch
 			beginningthreshlevel = 2;
 		end
@@ -2593,22 +2599,22 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Units','normalized',...
             'Max',20,...
             'Value',beginningthreshlevel,...
-            'Position',[0.05,0.05,0.9,0.06],...
+            'Position',[0.05,0.15,0.9,0.06],...
             'Callback',{@hthreshslide_callback});
         
         hthreshtext = uicontrol(...
             'Style','text',...
             'Parent',threshfig,...
             'Units','normalized',...
-            'String',num2str(beginningthreshlevel),...
-            'Position',[0.5,0.15,0.1,0.03]);
+            'String',['Gamma = ', num2str(beginningthreshlevel)],...
+            'Position',[0.5,0.22,0.1,0.03]);
         
         hsavethresh = uicontrol(...
             'Style','pushbutton',...
             'Parent',threshfig,...
             'Units','normalized',...
             'String','Save Mask Threshold',...
-            'Position',[0.1,0.15,0.1,0.08],...
+            'Position',[0.1,0.22,0.1,0.07],...
             'Callback',{@hsavethresh_callback});
         
         hdefaultthresh = uicontrol(...
@@ -2616,8 +2622,26 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Parent',threshfig,...
             'Units','normalized',...
             'String','Reset Thresh Value',...
-            'Position',[0.3,0.15,0.1,0.08],...
+            'Position',[0.3,0.22,0.1,0.07],...
             'Callback',{@hdefaultthresh_callback});
+        
+        hSmallParticleRemoverSlide = uicontrol(...
+            'Style','slider',...
+            'Parent',threshfig,...
+            'Units','normalized',...
+            'Max',60,...
+            'Value',7,...
+            'Position',[0.05,0.01,0.9,0.06],...
+            'Callback',{@hthreshslide_smallParticleRemover_callback});
+        
+        hSmallParticleText = uicontrol('Style','text', 'Parent',threshfig,'Units','normalized',...
+            'Position',[0.5, 0.065, 0.1, 0.03],...
+            'String',['Remove Small Particle Size = 7']);
+        
+        %hSaveSmallParticle = uicontrol('Style','pushbutton','Parent',threshfig,'Units','normalized','String','Save Small Particle Value',...
+        %    'Position',[0.1, 0.065, 0.1, 0.07],...
+        %    'Callback',{@hSaveSmParticle_callback});
+        
         
         plotimshowpair();
         
@@ -2628,11 +2652,27 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         function hthreshslide_callback(~,~)
             currthreshval = get(hthreshslide,'Value');
-            set(hthreshtext,'String',num2str(currthreshval));
+            set(hthreshtext,'String',['Gamma = ', num2str(currthreshval)]);
+            currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Gamma Level', currthreshval,...
+                'Remove Pixel Size', currSmallParticleVal,...
+                'Clear Binmap Border', false);
+            
+            plotimshowpair();
+        end
+        
+        function hthreshslide_smallParticleRemover_callback(~,~)
+            currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
+            set(hSmallParticleText,'String',['Remove Small Particle Size = ', num2str(currSmallParticleVal)]);
+            currthreshval = get(hthreshslide,'Value');
+            
+            Snew = OdStack(S,...
+                'Auto Gamma', 'no',...
+                'Gamma Level', currthreshval,...
+                'Remove Pixel Size', currSmallParticleVal,...
                 'Clear Binmap Border', false);
             
             plotimshowpair();
@@ -2656,12 +2696,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currthreshval = get(hthreshslide,'Value');
             Dataset.(Datasetnames{readyval}).threshlevel = currthreshval;
             S = Dataset.(Datasetnames{readyval}).S;
+            currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
             
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Gamma Level', currthreshval,...
+                'Remove Pixel Size', currSmallParticleVal,...
                 'Manual Io Check', manualIorecheck);
 
             Snew = energytest(Snew);
@@ -2743,7 +2785,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         readyval = get(hlistready,'Value');
         Snew = Dataset.(Datasetnames{readyval}).Snew;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
-        currthreshval = Dataset.(Datasetnames{readyval}).threshlevel;
+        currthreshval = Snew.gamma;
         S = Dataset.(Datasetnames{readyval}).S;
         
         Snew = OdStack(S,...
@@ -2975,7 +3017,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		currS = LoadStackRawMulti(datafolder);
 		
 		try
-			currthreshlevel = Dataset.(Datasetnames{readyval}).threshlevel;
+			currthreshlevel = currSnew.gamma;
 		catch
 			currthreshlevel = 2;
 		end
@@ -3043,7 +3085,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 %TODO
             elseif ~isempty(fieldnames(tempMatLoad)) % the mat file is a directory list          
                 removeIdxs = [removeIdxs, m];
-                newfiledirs = [newfiledirs; tempMatLoad.dirList];
+                for k = 1:length(tempMatLoad.dirList)
+                    tempDataFolder = load(tempMatLoad.dirList{k},'datafolder');
+                    newfiledirs = [newfiledirs; tempDataFolder.datafolder];
+                end
+%                 newfiledirs = [newfiledirs; tempMatLoad.dirList];
             end
             
         end

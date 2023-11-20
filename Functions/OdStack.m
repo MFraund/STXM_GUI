@@ -31,7 +31,7 @@ function S=OdStack(structin, varargin)
 % 	method = 'O';
 % end
 
-[varargin, autoGammaFlag] = ExtractVararginValue(varargin, 'Auto Gamma', 1);
+[varargin, autoGamma_bool] = ExtractVararginValue(varargin, 'Auto Gamma', true);
 [varargin, gammaLevel] = ExtractVararginValue(varargin, 'Gamma Level', 2);
 [varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
 
@@ -69,7 +69,7 @@ se = strel('disk', 30);
 topim = imtophat(grayim, se);
 
 % Gamma adjust
-[grayim, gammaLevel] = determineParticleGamma(topim, 'Auto Gamma', autoGammaFlag, 'gammain', gammaLevel, 'Remove Pixel Size', rmPixelSize);
+[grayim, gammaLevel] = determineParticleGamma(topim, 'Auto Gamma', autoGamma_bool, 'Gamma Level', gammaLevel, 'Remove Pixel Size', rmPixelSize);
 
 % Median filtering to get rid of noise
 grayim = medfilt2(grayim);
