@@ -105,17 +105,20 @@ S.mask = ~maskIzero;
 S.gamma = gammaLevel;
 
 %% Determing Binmap
+binmap = tempMask;
+binmap = bwareaopen(binmap, rmPixelSize, 8);
+
 if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
-    rawbinmap = tempMask;
-    rawbinmap = bwareaopen(rawbinmap, rmPixelSize, 8);
-    templabelmat = bwlabel(rawbinmap,8);
+    %rawbinmap = tempMask;
+    %rawbinmap = bwareaopen(rawbinmap, rmPixelSize, 8);
+    templabelmat = bwlabel(binmap,8);
     
     meanfig = figure;
     imagesc(imagebuffer);
     movegui(meanfig,'west');
     
     binfig = figure;
-    imagesc(rawbinmap);
+    imagesc(binmap);
     colormap('gray');
     movegui(binfig,'east');
     
@@ -141,9 +144,6 @@ elseif strcmpi(manualBinmapCheck,'given')
         Stemp = makinbinmap(Snew);
         binmap = Stemp.binmap;
     end
-else
-    binmap = tempMask;
-    binmap = bwareaopen(binmap, rmPixelSize, 8);
 end
 
 if clearBinmapBorder_bool
@@ -156,6 +156,7 @@ LabelMat=bwlabel(binmap,8);
 
 S.LabelMat = LabelMat;
 S.NumParticles = max(max(LabelMat));
+S.rmPixelSize = rmPixelSize;
 S.binmap = binmap;
 S = ParticleSize(S);
 

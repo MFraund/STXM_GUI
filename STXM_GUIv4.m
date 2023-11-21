@@ -616,7 +616,7 @@ hremoveenergy = uicontrol(...
 
 hmask_adjust = uicontrol(...
     'Style','pushbutton',...
-    'String','Adj. Part. Thresh.',...
+    'String','Gamma/Remove Pixels/Manual Io',...
     'Visible','off',...
     'Units','normalized',...
     'Position',[0.79, 0.01, 0.1, 0.053],...
@@ -630,6 +630,7 @@ hbinmap_adjust = uicontrol(...
     'Units','normalized',...
     'Position',[0.90, 0.01, 0.1, 0.053],...
     'Tag','DataViewer',...
+    'enable','off',...
     'Callback',{@hbinmap_adjust_callback});
 
 
@@ -2485,88 +2486,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     end
 
 
-%% Programming Manual Io button
-    function hmanualIo_callback(~,~)
-        readyval = get(hlistready,'Value');
-        S = Dataset.(Datasetnames{readyval}).S;
-        datafolder = Dataset.(Datasetnames{readyval}).Directory;       
-        currthreshval = Dataset.(Datasetnames{readyval}).Snew.gamma;
-        Snew = OdStack(S,'adaptive','manualiocheck','yes','Auto Gamma', 'no','imadjust_gamma',currthreshval); %Allows manual selection of Io region
-        Snew = energytest(Snew);
-%         Snew = makinbinmap(Snew);
-        
-        
-        if Snew.elements.C == 1
-            
-            if Dataset.(Datasetnames{readyval}).binadjtest == 1
-                Snew = CarbonMapsSuppFigs(Snew,0.35,1,1,'given',Snew.binmap);
-            else
-                Snew=CarbonMapsSuppFigs(Snew,0.35);
-            end
-            Snew = DirLabelOrgVolFrac(Snew);
-            
-            try
-                cd(datafolder);
-            catch
-                katyidx = strfind(datafolder,'C:\Users\Katy-Ann');
-                uopidx = strfind(datafolder,'D:\Users\Emily');
-                
-                if ~isempty(katyidx)
-                    datafolder(1:17) = [];
-                    datafolder = ['D:\Users\Emily',datafolder];
-                    
-                elseif ~isempty(uopidx)
-                    datafolder(1:14) = [];
-                    datafolder = ['C:\Users\Katy-Ann',datafolder];
-                else
-                    disp('previously saved directory doesnt exist on this computer');
-                end
-            end
-            
-            tempdir = dir;
-            cnt = 1;
-            for q = 1:length(tempdir)
-                hdridx = strfind(tempdir(q).name,'.hdr');
-                ximidx = strfind(tempdir(q).name,'.xim');
-                if ~isempty(ximidx) || ~isempty(hdridx)
-                    filenames{cnt} = tempdir(q).name;
-                    cnt = cnt + 1;
-                end
-            end
-            
-            [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
-        end
-        
-        if Snew.elements.S == 1
-            Snew = SulfurMaps(Snew);
-        end
-        
-        if Snew.elements.K == 1
-            Snew = PotassiumMaps(Snew);
-        end
-        
-        if Snew.elements.Ca == 1
-            Snew = CalciumMaps(Snew);
-        end
-        
-        if Snew.elements.N == 1
-            Snew = NitrogenMaps(Snew);
-        end
-        
-        if Snew.elements.O == 1
-            Snew = OxygenMaps(Snew);
-        end
-        
-        if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
-            Snew = CNOeleMaps(Snew);
-        end
-
-        mapstest = 1;
-        save(['../F',S.particle],'Snew','S','Mixing','Particles','datafolder','mapstest');
-        
-        hanalyze_callback();
-    end
-
 %% run and display EDXmap
 
 
@@ -2577,12 +2496,18 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         S = Dataset.(Datasetnames{readyval}).S;
         specmean = mean(Snew.spectr,3);
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
-		try
-% 			beginningthreshlevel = Dataset.(Datasetnames{readyval}).threshlevel;
+        
+        if hasfield(Snew, 'gamma')
             beginningthreshlevel = Snew.gamma;
-		catch
-			beginningthreshlevel = 2;
-		end
+        else
+            beginningthreshlevel = 2;
+        end
+        
+        if hasfield(Snew, 'rmPixelSize')
+            currSmallParticleVal = Snew.rmPixelSize;
+        else
+            currSmallParticleVal = 7;
+        end
         
         threshfig = figure(...
             'Units','normalized',...
@@ -2629,14 +2554,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Style','slider',...
             'Parent',threshfig,...
             'Units','normalized',...
-            'Max',60,...
-            'Value',7,...
+            'Max',100,...
+            'Value',currSmallParticleVal,...
             'Position',[0.05,0.01,0.9,0.06],...
             'Callback',{@hthreshslide_smallParticleRemover_callback});
         
         hSmallParticleText = uicontrol('Style','text', 'Parent',threshfig,'Units','normalized',...
             'Position',[0.5, 0.065, 0.1, 0.03],...
-            'String',['Remove Small Particle Size = 7']);
+            'String',['Remove Small Particle Size = ', num2str(currSmallParticleVal)]);
         
         %hSaveSmallParticle = uicontrol('Style','pushbutton','Parent',threshfig,'Units','normalized','String','Save Small Particle Value',...
         %    'Position',[0.1, 0.065, 0.1, 0.07],...
@@ -2686,7 +2611,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Gamma Level', currthreshval,...
-                'Thresh Method', threshMethod,...
                 'Clear Binmap Border', false);
             
             plotimshowpair();
@@ -2788,9 +2712,16 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         currthreshval = Snew.gamma;
         S = Dataset.(Datasetnames{readyval}).S;
         
+        if hasfield(Snew, 'rmPixelSize')
+            currSmallParticleVal = Snew.rmPixelSize;
+        else
+            currSmallParticleVal = 7;
+        end
+        
         Snew = OdStack(S,...
             'Auto Gamma', 'no',...
             'Gamma Level', currthreshval,...
+            'Remove Pixel Size',...
             'Manual Binmap','yes',...
             'Clear Binmap Border', false);
         
