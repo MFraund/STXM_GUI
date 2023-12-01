@@ -66,106 +66,94 @@ hroutinepopup = uicontrol(...
     'KeyPressFcn',{@hlistreadykey_callback},...
     'Callback',{@hroutinepopup_callback});
 
-
-
-
-
-
 %% Components in Load and Run screen
 %%%% 
 %%%%
 
-husesaved = uicontrol(...
-    'Style','checkbox',...
-    'String','Use Saved Analyses',...
-    'Units','normalized',...
-    'Value',1,...
+husesaved = uicontrol('Style','checkbox', 'String','Use Saved Analyses',...
+    'Units','normalized','Value',1,'Tag','Load',...
     'Position',[0.12,0.97,0.15,0.02],...
     'Callback',{@husesaved_callback});
 
-htextcheck = uicontrol(...
-	'Style','text',...
-	'String',[],...
-	'Units','normalized',...
+htextcheck = uicontrol('Style','text', 'String',[],...
+	'Units','normalized','Tag','Load',...
 	'Position',[0.20,0.965,0.2,0.02]);
 
-hqcsaved = uicontrol(...
-    'Style','checkbox',...
+hqcsaved = uicontrol('Style','checkbox',...
     'String','Use Saved QC Params',...
-    'Units','normalized',...
-    'Value',0,...
-    'Enable','off',...
+    'Units','normalized','Value',0,'Enable','off','Tag','Load',...
     'Position',[0.12,0.95,0.15,0.02],...
     'Callback',{@hqcsaved_callback});
 
-hthresholding_dropdown = uicontrol(...
-	'Style','popupmenu',...
-	'Units','normalized',...
-	'Position',[0.20, 0.95, 0.10, 0.02],...
+hthresholding_dropdown = uicontrol('Style','popupmenu','Units','normalized',...
+	'Position',[0.20, 0.95, 0.10, 0.02],'Tag','Load',...
 	'String',{'adaptive','O'},...
 	'Enable','off');
 
-hload = uicontrol(...
-    'Style','pushbutton',...
-    'String','Load STXM Data',...
+hload = uicontrol('Style','pushbutton','String', 'Load STXM Data',...
     'Units','normalized',...
     'Position',[0.01,0.88,0.05,0.053],...
     'Callback',{@hload_callback});
 
-hload_recursive = uicontrol(...
-	'Style','pushbutton',...
-    'String','Load All Recursive',...
+hload_recursive = uicontrol('Style','pushbutton', 'String','Load All Recursive',...
     'Units','normalized',...
     'Position',[0.06,0.88,0.05,0.053],...
     'Callback',{@hload_recursive_callback});
 
-hanalyze = uicontrol(...
-    'Style','pushbutton',...
-    'String','Analyze All',...
-    'Units','normalized',...
-    'Enable','off',...
+hanalyze = uicontrol('Style','pushbutton', 'String','Analyze All',...
+    'Units','normalized', 'Enable','off','Tag','Load',...
     'Position',[0.21,0.88,0.1,0.053],...
     'Callback',{@hanalyze_callback});
 
-hsort = uicontrol(...
-    'Style','pushbutton',...
-    'String','Run stxmsort',...
-    'Units','normalized',...
-    'Tag','Load',...
+
+% Helper Functions
+hsort = uicontrol('Style','pushbutton','String','Run stxmsort',...
+    'Units','normalized','Tag','Load',...
     'Position',[0.87, 0.93, 0.1, 0.053],...
     'Callback',{@hsort_callback});
 
-hdatamerge = uicontrol(...
-	'Style','pushbutton',...
-	'String','Merge STXM Data',...
-	'Units','normalized',...
-	'Tag','Load',...
+hdatamerge = uicontrol('Style','pushbutton','String','Merge STXM Data',...
+	'Units','normalized','Tag','Load',...
 	'Position',[0.87, 0.83, 0.1, 0.053],...
 	'Callback',{@hmerge_callback});
 
 
 
-hassumedinorgpopup = uicontrol(...
-	'Style','popupmenu',...
-    'Units','normalized',...
+hassumedinorgpopup = uicontrol('Style','popupmenu', 'Units','normalized','Tag','Load',...
     'Position',[0.32,0.878,0.1,0.05],...
-	'String',{'NaCl','(NH4)2SO4','NH4NO3','NaNO3','KNO3','Na2SO4','KCl','Fe2O3','CaCO3','ZnO','Pb(NO3)2','Al2Si2O9H4'},...
-    'Tag','Load');
+	'String',{'NaCl','(NH4)2SO4','NH4NO3','NaNO3','KNO3','Na2SO4','KCl','Fe2O3','CaCO3','ZnO','Pb(NO3)2','Al2Si2O9H4'});
 
-hassumedorgpopup = uicontrol(...
-	'Style','popupmenu',...
-	'Units','normalized',...
+hassumedorgpopup = uicontrol('Style','popupmenu','Units','normalized',...
 	'Position',[0.32,0.8,0.1,0.05],...
 	'String',{'sucrose','adipic','glucose','oxalic'},...
 	'Tag','Load');
 
-hloadmaps = uicontrol(...
-	'Style','popupmenu',...
-	'Units','normalized',...
+hloadmaps = uicontrol('Style','popupmenu','Units','normalized','Tag','Load',...
 	'Position',[0.32, 0.75',0.1, 0.05],...
-	'String',{'Load all (default)','Only Maps','Only Spectra'},...
-	'Tag','Load');
+	'String',{'Load all (default)','Only Maps','Only Spectra'});
 
+%%% TODO: Make some kind of saved file that this GUI opens to keep track of
+%%% previously selected directory
+
+
+startingDirPos = [0.32,0.94,0.2,0.02];
+hStartingDir = uicontrol('Style','text', 'Tag','Load', 'Units','normalized',...
+    'String',pwd,...
+    'Position',startingDirPos);
+
+hStartingDir_Label = uicontrol('Style','text','Tag','Load','Units','normalized',...
+    'String','Starting Directory',...
+    'Position',startingDirPos + [0, 0.02, 0, 0]);
+
+hDefault_DirSwitch = uicontrol('Style','pushbutton','Units','normalized',...
+    'Tag','Load','String','Switch to Default Directory',...
+    'Position',[0.32, 0.7,0.1, 0.05],...
+    'Callback',{@hDefault_DirSwitch_callback}); 
+
+hACEENA_DirSwitch = uicontrol('Style','pushbutton','Units','normalized',...
+    'Tag','Load','String','Switch to ACEENA Directory',...
+    'Position',[0.32, 0.65,0.1, 0.05],...
+    'Callback',{@hACEENA_DirSwitch_callback});
 
 
 %% Components seen in Data Viewer screen
@@ -363,6 +351,11 @@ hODlimitcheck = uicontrol(...
     'Value',0,...
     'Position',ODlimitcheckPOS,...
     'Callback',{@hODlimit_callback});
+
+hCMapSilhouetteCheck = uicontrol('Style','checkbox','Value',0,'Visible','off','Units','normalized','String','C Maps Silhouette',...
+    'Tag','DataViewer',...
+    'Position',[0.41,0.96,0.1,0.04],...
+    'Callback',{@hselect_callback});
 
 popupimagesPOS = [0 , 0.92, 0.1, 0.053];
 popupimagesPOS(1,1) = radiomultiplePOS(1,1) + 0.05;
@@ -592,6 +585,7 @@ hmanualIo = uicontrol(...
     'Visible','off',...
     'Position',[0.46,0.01,0.1,0.053],...
     'Tag','DataViewer',...
+    'enable','off',...
     'Callback',{@hmanualIo_callback});
 
 hfixAlign = uicontrol(...
@@ -630,7 +624,6 @@ hbinmap_adjust = uicontrol(...
     'Units','normalized',...
     'Position',[0.90, 0.01, 0.1, 0.053],...
     'Tag','DataViewer',...
-    'enable','off',...
     'Callback',{@hbinmap_adjust_callback});
 
 
@@ -913,46 +906,60 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	end
 
 %% Average Variables Button
-	function haveragevariable_callback(~,~)
-		
-		OVFvec = [];
-		Sizevec = [];
-		PartLabelVec = [];
-		CompSizeVec = [];
-        partDirList = cell(0);
-        croppedOVF = cell(0);
-        partMask = cell(0);
-        cSpecParts = cell(0);
-		for j = 1:length(filedirs)
-			currSnew = Dataset.(Datasetnames{j}).Snew;
-            currSnew = CropParticles(currSnew);
-			OVFvec = [OVFvec; currSnew.VolFrac];
-			Sizevec = [Sizevec, currSnew.Size];
-			PartLabelVec = [PartLabelVec, currSnew.PartLabel];
-			CompSizeVec = [CompSizeVec; currSnew.CompSize];
+    function haveragevariable_callback(~,~)
+        
+        % Preallocation
+        [OVFvec, Sizevec, PartLabelVec, CompSizeVec, DiVec, DalphaVec, DgammaVec] = deal([]);
+        [partDirList, croppedOVF, partMask, cSpecParts] = deal(cell(0));
+
+        for j = 1:length(filedirs)
+            %%
+            currSnew = Dataset.(Datasetnames{j}).Snew;
+            
             for k = 1:length(currSnew.PartLabel)
                 partDirList = [partDirList; Dataset.(Datasetnames{j}).Directory];
             end
+            
+            OVFvec = [OVFvec; currSnew.VolFrac];
+            Sizevec = [Sizevec, currSnew.Size];
+            PartLabelVec = [PartLabelVec, currSnew.PartLabel];
+            CompSizeVec = [CompSizeVec; currSnew.CompSize];
+            
+            %%
+            currSnew = CropParticles(currSnew);
             partMask = [partMask ; currSnew.CroppedParticles.partMask];
             croppedOVF = [croppedOVF ; currSnew.CroppedParticles.OVFParts];
             cSpecParts = [cSpecParts ; currSnew.CroppedParticles.cSpecParts];
-		end
-		
-		DataVectors.OVF = OVFvec;
-		DataVectors.Size = Sizevec;
-		DataVectors.PartLabel = PartLabelVec;
-		DataVectors.CompSize = CompSizeVec;
+            
+            %%
+            currSnew = MixingState_CComp(currSnew);
+            DiVec = [DiVec ; currSnew.Mixing.Di];
+            DalphaVec = [DalphaVec; currSnew.Mixing.Dalpha];
+            DgammaVec = [DgammaVec; currSnew.Mixing.Dgamma];
+            
+        end
+        
+        DataVectors.dirlist = filedirs;
         DataVectors.partDirList = partDirList;
-		DataVectors.dirlist = filedirs;
-        DataVectors.croppedOVF = croppedOVF;
+        
+        DataVectors.OVF = OVFvec;
+        DataVectors.Size = Sizevec;
+        DataVectors.PartLabel = PartLabelVec;
+        DataVectors.CompSize = CompSizeVec;
+        
         DataVectors.partMask = partMask;
+        DataVectors.croppedOVF = croppedOVF;
         DataVectors.cSpecParts = cSpecParts;
-		
-		assignin('base','DataVectors',DataVectors);
-		
-		
-		
-	end
+        
+        DataVectors.DiVec = DiVec;
+        DataVectors.DalphaVec = DalphaVec;
+        DataVectors.DgammaVec = DgammaVec;
+        DataVectors.Dalpha = prod(DalphaVec);
+        DataVectors.Dgamma = prod(DgammaVec);
+        DataVectors.Chi = (DataVectors.Dalpha - 1) ./ (DataVectors.Dgamma - 1);
+        
+        assignin('base','DataVectors',DataVectors);
+    end
 
 %% hradiomultiple callback
     function hradiomultiple_callback(~,~)
@@ -1101,8 +1108,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 Dataset.(currfov).binadjtest = 0;
                 Dataset.(currfov).threshlevel = 2;
                 Dataset.(currfov).savedbinmap = 0;
-                Dataset.(currfov).inorganic = 'NaCl';
-                Dataset.(currfov).organic = 'Sucrose';
+%                 Dataset.(currfov).inorganic = 'NaCl';
+%                 Dataset.(currfov).organic = 'Sucrose';
                 
                 % Pulling numbers if already defined
                 if hasfield(tempdataset, 'binadjtest',1)
@@ -1117,12 +1124,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     Dataset.(currfov).savedbinmap = tempdataset.savedbinmap;
                 end
                 
-                if hasfield(tempdataset, 'inorganic',1)
-                    Dataset.(currfov).inorganic = tempdataset.inorganic;
+                if hasfield(tempdataset.Snew, 'OVFassumedinorg')
+                    Dataset.(currfov).Snew.OVFassumedinorg = tempdataset.Snew.OVFassumedinorg;
                 end
                 
-                if hasfield(tempdataset, 'organic',1)
-                    Dataset.(currfov).organic = tempdataset.organic;
+                if hasfield(tempdataset.Snew, 'OVFassumedorg')
+                    Dataset.(currfov).Snew.OVFassumedorg = tempdataset.Snew.OVFassumedorg;
                 end
             end
             
@@ -1311,7 +1318,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 				
 				try
-					currDataInfo = {['# Particles: ' + string(length(currSnew.Size))],['Mean Size: ' + string(mean(currSnew.Size))],['Mean Vol. Frac.: ' + string(mean(currSnew.VolFrac))],['# Energies: ' + string(length(currSnew.eVenergy))]};
+					currDataInfo = {...
+                        ['# Particles: ', num2str(currSnew.NumParticles)],...
+                        ['Mean Size: ', num2str(mean(currSnew.Size,'omitnan'))],...
+                        ['Mean Vol. Frac.: ', num2str(mean(currSnew.VolFrac,'omitnan'))],...
+                        ['# Energies: ', num2str(length(currSnew.eVenergy))]};
 					set(hdatainfo,'String',currDataInfo);
 				catch
 				end
@@ -1597,12 +1608,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             title('%sp^{2} Map')
                             
                             handle4 = subplot(2,2,4);
-                            image(xdat,ydat,uint8(RgbMat));
-                            title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
                             set(handle4,'Parent',hpanelmultiple);
-                            axis image
-                            xlabel('X (\mum)');
-                            ylabel('Y (\mum)');
+                            
+                            Plot_CMap(currSnew, handle4)
+%                             image(xdat,ydat,uint8(RgbMat));
+%                             title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
+%                             axis image
+%                             xlabel('X (\mum)');
+%                             ylabel('Y (\mum)');
                             
                         elseif radiosingleval == 1
                             set(hpanelmultiple,'Visible','off')
@@ -1610,7 +1623,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             delete(gca);
                             
                             
-                            axes(...
+                            hax_singlepanel = axes(...
                                 'Units','normalized',...
                                 'Position',[0.07,0.06,0.9,0.9],...
                                 'Parent',hpanelsingle,...
@@ -1636,8 +1649,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                                     colorbar
                                     title('%sp^{2} Map')
                                 case 4
-                                    image(xdat,ydat,uint8(RgbMat));
-                                    title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
+                                    Plot_CMap(currSnew, hax_singlepanel)
+%                                     image(xdat,ydat,uint8(RgbMat));
+%                                     title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
                             end
                             axis image
                             xlabel('X (\mum)');
@@ -2229,14 +2243,16 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		xdat=(0:XSiz:Xvalue);
 		ydat=(0:YSiz:Yvalue);
 		
-				
+        
 		subhandle{1} = subplot(2,2,1);
-		image(xdat,ydat,uint8(currSnew.RGBCompMap));
-		title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',0.35));
-		set((subhandle{1}),'Parent',hpanelmultiple);
-		axis image
-		xlabel('X (\mum)');
-		ylabel('Y (\mum)');
+        set(subhandle{1},'Parent',hpanelmultiple);
+        Plot_CMap(currSnew, subhandle{1}); 
+% 		image(xdat,ydat,uint8(currSnew.RGBCompMap));
+% 		title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',0.35));
+% 		set((subhandle{1}),'Parent',hpanelmultiple);
+% 		axis image
+% 		xlabel('X (\mum)');
+% 		ylabel('Y (\mum)');
 		
 		subhandle{2} = subplot(2,2,2);
 		imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
@@ -2296,6 +2312,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function hODlimit_callback(~,~)
         hselect_callback();
     end
+
+
 
 %% Control raw images radio button group
     function rawbg_callback(~,event)
@@ -2721,7 +2739,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         Snew = OdStack(S,...
             'Auto Gamma', 'no',...
             'Gamma Level', currthreshval,...
-            'Remove Pixel Size',...
+            'Remove Pixel Size',currSmallParticleVal,...
             'Manual Binmap','yes',...
             'Clear Binmap Border', false);
         
@@ -2997,8 +3015,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		if size(filedirs_in,1) > 1 && size(filedirs_in,2) == 1
 			filedirs_in = filedirs_in';
 		end
-		
-		newfiledirs = uipickfiles('REFilter','\.mat$|\.hdr','Append',filedirs_in);
+		startingDir = get(hStartingDir,'String');
+        
+		newfiledirs = uipickfiles('FilterSpec',startingDir,'REFilter','\.mat$|\.hdr','Append',filedirs_in);
 		
         if ~iscell(newfiledirs) % If user presses cancel button
             return;
@@ -3039,8 +3058,53 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		newfiledirs(remove_list) = [];
 		filedirs_in = [filedirs_in, newfiledirs];
 		
-	end
+    end
 
+%% Cmap Plot
+    function Plot_CMap(Snew, varargin)
+        
+        CMapSilhouetteCheck = get(hCMapSilhouetteCheck,'Value');
+        
+        [varargin, axes_handle] = ExtractVararginValue(varargin, 'Axes Handle', gca);
+        MatSiz=size(Snew.LabelMat);
+		Xvalue = Snew.Xvalue;
+		Yvalue = Snew.Yvalue;
+		XSiz=Xvalue/MatSiz(1);
+		YSiz=Yvalue/MatSiz(2);
+		xdat=(0:XSiz:Xvalue);
+		ydat=(0:YSiz:Yvalue);
+        
+        if CMapSilhouetteCheck == 1
+            Snew = CMapBackground(Snew);
+            image(xdat, ydat, uint8(Snew.CMapSilhouette));
+        else
+            image(xdat, ydat, uint8(Snew.RGBCompMap));
+        end
+        title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',0.35));
+		
+		axis image
+		xlabel('X (\mum)');
+		ylabel('Y (\mum)');
+         
+    end
+
+%% Setting Starting Directories
+    % Default
+    function hDefault_DirSwitch_callback(~,~)
+        set(hStartingDir, 'String',pwd);
+    end
+
+    % ACE ENA Data
+    function hACEENA_DirSwitch_callback(~,~)
+       if isfolder('Z:\Google Drive\Projects\ACE-ENA\Data')
+           set(hStartingDir, 'String', 'Z:\Google Drive\Projects\ACE-ENA\Data');
+       else
+           disp('<Z:\Google Drive\Projects\ACE-ENA\Data> does not exist');
+       end
+        
+    end
+
+    
 %% UI Cleaner ????????
 	function UI_Cleaner()
 		

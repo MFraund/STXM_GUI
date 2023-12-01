@@ -105,10 +105,10 @@ for i = 1:numobj %% loops through stack folders in raw data folder
 end
 
 % S = RemoveHorizStreaks_STXM(S);
-%% AlignStack
+%% Stack Alignment
 S = AlignStack(S);
 
-%% OdStack
+%% Optical Density Calculation
 
 if length(S.eVenergy) < 3
     threshMethod = 'map';
