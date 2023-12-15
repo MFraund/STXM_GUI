@@ -143,7 +143,7 @@ if Snew.elements.C == 1
         'Pre-edge SN Limit',preLimitSN,...
         'PrePost SN Limit', prepostLimitSN...
         );
-    savedbinmap = givenBinMap; % Currently Unused
+    %savedbinmap = givenBinMap; % Currently Unused
     
     
     Snew = DirLabelOrgVolFrac(Snew,inorganic,organic);

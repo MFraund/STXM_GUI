@@ -69,47 +69,6 @@ end
 % [varargin, figsav] = ExtractVararginValue(varargin, 'Save Figures', 0);
 % [varargin, nofig] = ExtractVararginValue(varargin, 'Plot Figures', 0)
 
-
-% if isempty(varargin)
-%     spThresh=0.35;
-%     figsav=0;
-%     nofig=0;
-%     manualbinmapcheck = 'no';
-% elseif length(varargin)==1
-%     spThresh=varargin{1};
-%     figsav=0;
-%     nofig=0;
-%     manualbinmapcheck = 'no';
-% elseif length(varargin)==2
-%     spThresh=varargin{1};
-%     rootdir=varargin{2};
-%     figsav=0;
-%     nofig=1;
-%     manualbinmapcheck = 'no';
-% elseif length(varargin)==3
-%     spThresh=varargin{1};
-%     rootdir=varargin{2};
-%     sample=varargin{3};
-%     figsav=1;
-%     nofig=0;
-%     manualbinmapcheck = 'no';
-% elseif length(varargin)==4
-%     spThresh=varargin{1};
-%     rootdir=varargin{2};
-%     sample=varargin{3};
-%     manualbinmapcheck = varargin{4};
-%     figsav=1;
-%     nofig=0;
-% elseif length(varargin)==5
-%     spThresh=varargin{1};
-%     rootdir=varargin{2};
-%     sample=varargin{3};
-%     manualbinmapcheck = varargin{4};
-%     figsav=1;
-%     nofig=0;
-%     binmap=varargin{5};
-% end
-
 SNlimit = 0;
 
 if spThresh>1
@@ -117,9 +76,6 @@ if spThresh>1
     spThresh=spThresh/100;
 end
 
-energy=Snew.eVenergy;
-stack=Snew.spectr;
-subdim=ceil(sqrt(length(energy)));
 
 %% Finding relevant energy indicies
 [~,preidx] = ClosestValue(energy, 278, [277, 283], 'Error Message', 'missing pre-edge energy');
@@ -447,7 +403,7 @@ else
     PartLabel=PartLabel;
 end
 
-%%%Define outputs
+%%Define outputs
 % Snew.LabelMat=LabelMat;
 % Snew.NumParticles = max(max(LabelMat));
 Snew.PartLabel=PartLabel;

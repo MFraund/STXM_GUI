@@ -1,4 +1,4 @@
-function [closestVal, closestIdx] = ClosestValue(vector, value, bounds, varargin)
+function [closestVal, closestIdx, valFound_bool] = ClosestValue(vector, value, bounds, varargin)
 % function [closestVal, closestIdx] = ClosestValue(vector, value, bounds)
 %
 % Determines and outputs the value in "vector" that is the closest to the input "value"
@@ -92,6 +92,9 @@ if closestVal < lowerBound | closestVal > upperBound
 	closestVal = NaN;
 	closestIdx = NaN;
 	disp(errMsg);
+    valFound_bool = false;
+else
+    valFound_bool = true;
 end
 
 

@@ -911,9 +911,20 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         % Preallocation
         [OVFvec, Sizevec, PartLabelVec, CompSizeVec, DiVec, DalphaVec, DgammaVec] = deal([]);
         [partDirList, croppedOVF, partMask, cSpecParts] = deal(cell(0));
-
+        
+        lfiledirs = length(filedirs);
+        
+        if any(exist('sillystring','file'))
+			hwait = waitbar(0,sillystring);
+		else
+			hwait = waitbar(0,'plz w8');
+        end
+        
         for j = 1:length(filedirs)
-            %%
+            hwait.Name = ['Averaging ', str(j),' of ', str(lfiledirs)];
+            waitbar(j/lfiledirs);
+            drawnow
+            
             currSnew = Dataset.(Datasetnames{j}).Snew;
             
             for k = 1:length(currSnew.PartLabel)
@@ -925,19 +936,19 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             PartLabelVec = [PartLabelVec, currSnew.PartLabel];
             CompSizeVec = [CompSizeVec; currSnew.CompSize];
             
-            %%
+            %
             currSnew = CropParticles(currSnew);
             partMask = [partMask ; currSnew.CroppedParticles.partMask];
             croppedOVF = [croppedOVF ; currSnew.CroppedParticles.OVFParts];
             cSpecParts = [cSpecParts ; currSnew.CroppedParticles.cSpecParts];
             
-            %%
+            %
             currSnew = MixingState_CComp(currSnew);
             DiVec = [DiVec ; currSnew.Mixing.Di];
             DalphaVec = [DalphaVec; currSnew.Mixing.Dalpha];
             DgammaVec = [DgammaVec; currSnew.Mixing.Dgamma];
-            
         end
+        close(hwait);
         
         DataVectors.dirlist = filedirs;
         DataVectors.partDirList = partDirList;
@@ -954,9 +965,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors.DiVec = DiVec;
         DataVectors.DalphaVec = DalphaVec;
         DataVectors.DgammaVec = DgammaVec;
-        DataVectors.Dalpha = prod(DalphaVec);
-        DataVectors.Dgamma = prod(DgammaVec);
-        DataVectors.Chi = (DataVectors.Dalpha - 1) ./ (DataVectors.Dgamma - 1);
+        
+%         DataVectors.Chi = (DataVectors.Dalpha - 1) ./ (DataVectors.Dgamma - 1);
         
         assignin('base','DataVectors',DataVectors);
     end
@@ -1100,7 +1110,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     
                 catch
                     usesaveflag = 0;
-                    tempdataset = [];
+                    tempdataset = struct('Snew',[]);
                     
                 end
                 
@@ -1342,17 +1352,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 Mask = Dataset.(Datasetnames{readyvalue}).Snew.mask;
                 binmap = Dataset.(Datasetnames{readyvalue}).Snew.binmap;
                 imagebuffer=mean(stack,3);
-                RgbMat = Dataset.(Datasetnames{readyvalue}).Snew.RGBCompMap;
-                carb = Dataset.(Datasetnames{readyvalue}).Snew.Maps(:,:,1);
-                prepost = Dataset.(Datasetnames{readyvalue}).Snew.Maps(:,:,2);
-                sp2 = Dataset.(Datasetnames{readyvalue}).Snew.Maps(:,:,3);
                 LabelMat = Dataset.(Datasetnames{readyvalue}).Snew.LabelMat;
-                spThresh = 0.35;
                 MatSiz=size(LabelMat);
-                XSiz=Xvalue/MatSiz(1);
-                YSiz=Yvalue/MatSiz(2);
-                xdat=(0:XSiz:Xvalue);
-                ydat=(0:YSiz:Yvalue);
+
                 set(hplottitle,'String',Datasetnames{readyvalue});
                 
                 switch popupimagestr{popupimageval}
@@ -1574,54 +1576,27 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                         set(rawbg,'Visible','off');
                         
                         if radiomultipleval == 1
-                            
                             handle1 = subplot(2,2,1);
-                            imagesc([0, Xvalue],[0,Yvalue],carb);
                             set(handle1,'Parent',hpanelmultiple);
-                            colormap gray
-                            colorbar
-                            axis image
-                            title('PostEdge-PreEdge');
-                            xlabel('X (\mum)');
-                            ylabel('Y (\mum)');
+                            Plot_carb(currSnew);
                             
                             handle2 = subplot(2,2,2);
-                            imagesc([0,Xvalue],[0,Yvalue],prepost);
                             set(handle2,'Parent',hpanelmultiple);
-                            colormap gray
-                            colorbar
-                            axis image
-                            set(gca,'Clim',[0,1.0])
-                            xlabel('X (\mum)');
-                            ylabel('Y (\mum)');
-                            title('PreEdge/PostEdge');
+                            Plot_prepost(currSnew);
+                            
                             
                             handle3 = subplot(2,2,3);
-                            imagesc([0,Xvalue],[0,Yvalue],sp2);
                             set(handle3,'Parent',hpanelmultiple);
-                            colormap gray
-                            set(gca,'Clim',[0,1.0])
-                            axis image
-                            xlabel('X (\mum)');
-                            ylabel('Y (\mum)');
-                            colorbar
-                            title('%sp^{2} Map')
+                            Plot_sp2(currSnew);
                             
                             handle4 = subplot(2,2,4);
                             set(handle4,'Parent',hpanelmultiple);
-                            
                             Plot_CMap(currSnew, handle4)
-%                             image(xdat,ydat,uint8(RgbMat));
-%                             title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
-%                             axis image
-%                             xlabel('X (\mum)');
-%                             ylabel('Y (\mum)');
-                            
+
                         elseif radiosingleval == 1
                             set(hpanelmultiple,'Visible','off')
                             set(hpanelsingle,'Visible','on')
                             delete(gca);
-                            
                             
                             hax_singlepanel = axes(...
                                 'Units','normalized',...
@@ -1632,30 +1607,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             
                             switch imageselectionvalue
                                 case 1
-                                    imagesc([0, Xvalue],[0,Yvalue],carb);
-                                    colormap gray
-                                    colorbar
-                                    title('PostEdge-PreEdge');
+                                    Plot_carb(currSnew);
                                 case 2
-                                    imagesc([0,Xvalue],[0,Yvalue],prepost);
-                                    colormap gray
-                                    colorbar
-                                    set(gca,'Clim',[0,1.0])
-                                    title('PreEdge/PostEdge');
+                                    Plot_prepost(currSnew);
                                 case 3
-                                    imagesc([0,Xvalue],[0,Yvalue],sp2);
-                                    colormap gray
-                                    set(gca,'Clim',[0,1.0])
-                                    colorbar
-                                    title('%sp^{2} Map')
+                                    Plot_sp2(currSnew);
                                 case 4
                                     Plot_CMap(currSnew, hax_singlepanel)
-%                                     image(xdat,ydat,uint8(RgbMat));
-%                                     title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',spThresh));
                             end
-                            axis image
-                            xlabel('X (\mum)');
-                            ylabel('Y (\mum)');
                             
                         end
                         
@@ -2187,46 +2146,43 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% Data Summary Plots
 	function DataSummary()
-		Sval = get(hSulfurbox,'Value');
-		Cval = get(hCarbonbox,'Value');
-		Kval = get(hPotassiumbox,'Value');
-		Caval = get(hCalciumbox,'Value');
-		Nval = get(hNitrogenbox,'Value');
-		Oval = get(hOxygenbox,'Value');
-		
 		readyvalue = get(hlistready,'Value');
 		currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 		currelements= fieldnames(currSnew.elements);
 		
-		eleflagvec = [Sval;Cval;Kval;Caval;Nval;Oval];
-		totelefield = {'totS','TotC','totK','totCa','totN','totO'};
-		
-		elenum = Sval + Cval + Kval + Caval + Nval + Oval;
-		
 		%Making only boxes which have elemental data visible
 		for i = 1:length(heleboxlist)
 			if currSnew.elements.(currelements{i}) == 1
-				set(heleboxlist{i},'Visible','on');
+				set(heleboxlist{i},'Visible','on','Value',1);
 				
 			else
-				set(heleboxlist{i},'Visible','off');
-				if eleflagvec(i) == 1 %if a box is checked but there is no data, uncheck the box
-					eleflagvec(i) = 0;
-					set(heleboxlist{i},'Value',0);
-				end
+				set(heleboxlist{i},'Visible','off', 'Value',0);
+% 				if eleflagvec(i) == 1 %if a box is checked but there is no data, uncheck the box
+% 					eleflagvec(i) = 0;
+% 					set(heleboxlist{i},'Value',0);
+% 				end
 			end
 		end
 		
 		%Making sure only 1 boxes can be checked at a time because I only want a
 		%4x4 subplot, any more and you cant see much.
-		if elenum == 1
-			uncheckedboxes = findobj('Tag','DataViewer','-and','Value',0,'-and','Style','checkbox','-and','Parent',helementpanel);
-			set(uncheckedboxes,'Enable','off');
-		else
-			allboxes = findobj('Tag','DataViewer','-and','Style','checkbox','-and','Parent',helementpanel);
-			set(allboxes,'Enable','on');
-		end
+% 		if elenum == 1
+% 			uncheckedboxes = findobj('Tag','DataViewer','-and','Value',0,'-and','Style','checkbox','-and','Parent',helementpanel);
+% 			set(uncheckedboxes,'Enable','off');
+% 		else
+% 			allboxes = findobj('Tag','DataViewer','-and','Style','checkbox','-and','Parent',helementpanel);
+% 			set(allboxes,'Enable','on');
+% 		end
+        Sval = get(hSulfurbox,'Value');
+		Cval = get(hCarbonbox,'Value');
+		Kval = get(hPotassiumbox,'Value');
+		Caval = get(hCalciumbox,'Value');
+		Nval = get(hNitrogenbox,'Value');
+		Oval = get(hOxygenbox,'Value');
+		eleflagvec = [Sval;Cval;Kval;Caval;Nval;Oval];
+		totelefield = {'totS','TotC','totK','totCa','totN','totO'};
 		
+		elenum = Sval + Cval + Kval + Caval + Nval + Oval;
 		checkedele = find(eleflagvec == 1);
 		
 		panelplots = findobj('Parent',hpanelmultiple);
@@ -2247,12 +2203,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		subhandle{1} = subplot(2,2,1);
         set(subhandle{1},'Parent',hpanelmultiple);
         Plot_CMap(currSnew, subhandle{1}); 
-% 		image(xdat,ydat,uint8(currSnew.RGBCompMap));
-% 		title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',0.35));
-% 		set((subhandle{1}),'Parent',hpanelmultiple);
-% 		axis image
-% 		xlabel('X (\mum)');
-% 		ylabel('Y (\mum)');
 		
 		subhandle{2} = subplot(2,2,2);
 		imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
@@ -2265,14 +2215,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		cbar{i} = colorbar;
 		
 		subhandle{3} = subplot(2,2,3);
-		imagesc([0,Xvalue],[0,Yvalue],currSnew.ThickMap(:,:,end));
-		axis image
-		xlabel('X (\mum)');
-		ylabel('Y (\mum)');
-		colormap(subhandle{3},parula)
-		title('Organic Vol Frac');
-		set(subhandle{3},'Parent',hpanelmultiple);
-		cbar{3} = colorbar;
+        set((subhandle{3}),'Parent',hpanelmultiple);
+		Plot_OVF(currSnew)
 		
 		
 % 		volfracdist = max(currSnew.VolFrac) - min(currSnew.VolFrac);
@@ -2283,23 +2227,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 % 		set(subhandle{4},'Parent',hpanelmultiple,'XLim',[0,1]);
 		
 		
-		try
-			[n, binctrs] = hist3([currSnew.Size', currSnew.VolFrac] ,[20,20],'CDataMode','auto');
-			xbindist = binctrs{1,1}(1,2)-binctrs{1,1}(1,1);
-			ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
-			xbinverts = binctrs{1,1}-xbindist;
-			ybinverts = binctrs{1,2}-ybindist;
-			
+		try    
 			subhandle{4} =  subplot(2,2,4);
-			imagesc(xbinverts, ybinverts, n');
-			axis square
-			xlabel('Particle Size (CED, \mum)');
-			ylabel('Vol. Frac.');
-			title('2D Histogram');
-			set(subhandle{4},'Parent',hpanelmultiple);
-			set(gca,'YDir','normal');
-			colormap(subhandle{4},plasma)
-			colorbar
+            set(subhandle{4},'Parent',hpanelmultiple);
+            Plot_2DHistOVF(currSnew);
 		catch
 			currSnew.Size
 		end
@@ -3036,8 +2967,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             elseif ~isempty(fieldnames(tempMatLoad)) % the mat file is a directory list          
                 removeIdxs = [removeIdxs, m];
                 for k = 1:length(tempMatLoad.dirList)
-                    tempDataFolder = load(tempMatLoad.dirList{k},'datafolder');
-                    newfiledirs = [newfiledirs; tempDataFolder.datafolder];
+                    if isfolder(tempMatLoad.dirList{k})
+                        newfiledirs = [newfiledirs, tempMatLoad.dirList{k}];
+                    elseif isfile(tempMatLoad.dirList{k})
+                        tempDataFolder = load(tempMatLoad.dirList{k},'datafolder');
+                        newfiledirs = [newfiledirs, tempDataFolder.datafolder];
+                    end
                 end
 %                 newfiledirs = [newfiledirs; tempMatLoad.dirList];
             end
@@ -3060,12 +2995,16 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
     end
 
-%% Cmap Plot
+%% Plotting Functions --------------------------
+%Cmap Plot      
     function Plot_CMap(Snew, varargin)
-        
         CMapSilhouetteCheck = get(hCMapSilhouetteCheck,'Value');
-        
         [varargin, axes_handle] = ExtractVararginValue(varargin, 'Axes Handle', gca);
+        
+        if Snew.elements.C ~= 1
+            return
+        end
+        
         MatSiz=size(Snew.LabelMat);
 		Xvalue = Snew.Xvalue;
 		Yvalue = Snew.Yvalue;
@@ -3081,12 +3020,92 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             image(xdat, ydat, uint8(Snew.RGBCompMap));
         end
         title(sprintf('Red=sp2>%g%,Blue=pre/post>0.5,green=Organic',0.35));
-		
 		axis image
 		xlabel('X (\mum)');
 		ylabel('Y (\mum)');
          
     end
+    
+    function Plot_carb(Snew, varargin)
+        if Snew.elements.C ~= 1
+            return
+        end
+        
+        imagesc([0, Snew.Xvalue],[0,Snew.Yvalue],Snew.Maps(:,:,1));
+        colormap gray
+        colorbar
+        axis image
+        title('PostEdge-PreEdge');
+        xlabel('X (\mum)');
+        ylabel('Y (\mum)');
+        
+    end
+
+    function Plot_prepost(Snew,varargin)
+        if Snew.elements.C ~= 1
+            return
+        end
+        
+        imagesc([0,Snew.Xvalue],[0,Snew.Yvalue],Snew.Maps(:,:,2));
+        colormap gray
+        colorbar
+        axis image
+        set(gca,'Clim',[0,1.0])
+        xlabel('X (\mum)');
+        ylabel('Y (\mum)');
+        title('PreEdge/PostEdge');
+        
+    end
+    
+    function Plot_sp2(Snew, varargin)
+        if Snew.elements.C ~= 1
+            return
+        end
+        
+        imagesc([0,Snew.Xvalue],[0,Snew.Yvalue],Snew.Maps(:,:,3));
+        colormap gray
+        set(gca,'Clim',[0,1.0])
+        axis image
+        xlabel('X (\mum)');
+        ylabel('Y (\mum)');
+        colorbar
+        title('%sp^{2} Map')
+    end
+
+    function Plot_OVF(Snew, varargin)
+        if Snew.elements.C ~= 1
+            return
+        end
+        imagesc([0,Snew.Xvalue],[0,Snew.Yvalue],Snew.ThickMap(:,:,end));
+		axis image
+		xlabel('X (\mum)');
+		ylabel('Y (\mum)');
+		colormap(gca,parula);
+		title('Organic Vol Frac');
+		cbar{3} = colorbar;
+    end
+
+    function Plot_2DHistOVF(Snew, varargin)
+        if Snew.elements.C ~= 1
+            return
+        end
+        [n, binctrs] = hist3([Snew.Size', Snew.VolFrac] ,[20,20],'CDataMode','auto');
+        xbindist = binctrs{1,1}(1,2)-binctrs{1,1}(1,1);
+        ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
+        xbinverts = binctrs{1,1}-xbindist;
+        ybinverts = binctrs{1,2}-ybindist;
+        
+        imagesc(xbinverts, ybinverts, n');
+        axis square
+        xlabel('Particle Size (CED, \mum)');
+        ylabel('Vol. Frac.');
+        title('2D Histogram');
+        set(gca,'YDir','normal');
+        colormap(gca,plasma)
+        colorbar        
+        
+    end
+        
 
 %% Setting Starting Directories
     % Default
