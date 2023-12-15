@@ -921,7 +921,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
         
         for j = 1:length(filedirs)
-            hwait.Name = ['Averaging ', str(j),' of ', str(lfiledirs)];
+            hwait.Name = ['Averaging ', num2str(j),' of ', num2str(lfiledirs)];
             waitbar(j/lfiledirs);
             drawnow
             
@@ -1040,7 +1040,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		else
 			hwait = waitbar(0,'plz w8');
 		end
-		hwait.Name = ['Analyzing 1 of ', str(lfiledirs)];
+		hwait.Name = ['Analyzing 1 of ', num2str(lfiledirs)];
 		
 		removelist = [];
 		
@@ -1249,7 +1249,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             end
             Dataset.(currfov).Snew.ParticleSpec = normPartSpec;
             
-			hwait.Name = ['Analyzing ', str(j+1),' of ', str(lfiledirs)];
+			hwait.Name = ['Analyzing ', num2str(j+1),' of ', num2str(lfiledirs)];
 			disp(j);
 			waitbar(j/lfiledirs);
 			
@@ -2146,6 +2146,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% Data Summary Plots
 	function DataSummary()
+        
+        %%% Supressing repeated warnings
+        id = 'MATLAB:ui:javacomponent:FunctionToBeRemoved';
+        oldState = warning('query', id);
+        restoreWarning = onCleanup(@() warning(oldState));
+        warning('off', id)
+        
 		readyvalue = get(hlistready,'Value');
 		currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 		currelements= fieldnames(currSnew.elements);
