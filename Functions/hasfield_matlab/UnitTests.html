@@ -1,0 +1,430 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>UnitTests</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-05-19"><meta name="DC.source" content="UnitTests.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Test Cases</a></li><li><a href="#2">Soft error on non-struct</a></li><li><a href="#3">Test cases where result should be equal to isfield()</a></li><li><a href="#4">Multilevel feature tests</a></li><li><a href="#5">regex variant should match vanilla</a></li><li><a href="#6">test regex checking</a></li></ul></div><h2 id="1">Test Cases</h2><pre class="codeinput">clear(<span class="string">'a'</span>,<span class="string">'b'</span>,<span class="string">'c'</span>,<span class="string">'d'</span>,<span class="string">'Lorem'</span>);
+<span class="comment">% non-struct case</span>
+a = 0
+
+<span class="comment">% basic case, 1 iteration</span>
+b.a = 1
+
+<span class="comment">% basic case, multiple options</span>
+c.a = 1;
+c.b = 2;
+c.c = 3;
+c.d = 4
+
+<span class="comment">% multilevel case</span>
+d.a = 1;
+
+d.b.a = 1;
+d.b.b = 2;
+d.b.c = 3;
+d.b.d = 4;
+
+d.c.a = 1;
+d.c.b = 2;
+d.c.c = 3;
+d.c.d.a = 1;
+d.c.d.b.waldo = <span class="string">'where?'</span>
+d.c.d.walbo = <span class="string">'wear?'</span>
+
+Lorem.ipsum = <span class="string">'sit'</span>;
+Lorem.sit.iPSum = <span class="string">'sit'</span>;
+Lorem.adipiscing.a1tempo = <span class="string">'incididunt'</span>;
+Lorem.adipiscing.a2te123mor = <span class="string">'incididunt'</span>;
+Lorem.adipiscing.id.a.temp91o2j1r = <span class="string">'incididunt'</span>;
+Lorem.adipiscing.id.tepor = <span class="string">'incididunt'</span>;
+</pre><pre class="codeoutput">
+a =
+
+     0
+
+
+b = 
+
+  struct with fields:
+
+    a: 1
+
+
+c = 
+
+  struct with fields:
+
+    a: 1
+    b: 2
+    c: 3
+    d: 4
+
+
+d = 
+
+  struct with fields:
+
+    a: 1
+    b: [1&times;1 struct]
+    c: [1&times;1 struct]
+
+
+d = 
+
+  struct with fields:
+
+    a: 1
+    b: [1&times;1 struct]
+    c: [1&times;1 struct]
+
+</pre><h2 id="2">Soft error on non-struct</h2><pre class="codeinput">assert(hasfield(a)==0)
+</pre><pre class="codeoutput">Warning: input is not a struct 
+</pre><h2 id="3">Test cases where result should be equal to isfield()</h2><pre class="codeinput">assert(hasfield(b,<span class="string">'a'</span>) == isfield(b,<span class="string">'a'</span>))
+assert(hasfield(b,<span class="string">'b'</span>) == isfield(b,<span class="string">'b'</span>))
+assert(hasfield(c,<span class="string">'b'</span>) == isfield(c,<span class="string">'b'</span>))
+assert(hasfield(c,<span class="string">'e'</span>) == isfield(c,<span class="string">'e'</span>))
+</pre><h2 id="4">Multilevel feature tests</h2><pre class="codeinput">assert(hasfield(d,<span class="string">'waldo'</span>)==1)
+
+[x,L] = hasfield(d,<span class="string">'d'</span>)
+assert(x==1 &amp;&amp; L==2)
+
+[x,L] = hasfield(d,<span class="string">'waldo'</span>)
+assert(x==1 &amp;&amp; L==4)
+</pre><pre class="codeoutput">
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     2
+
+
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     4
+
+</pre><h2 id="5">regex variant should match vanilla</h2><pre class="codeinput">assert(hasfield(b,<span class="string">'a'</span>) == hasfieldrx(b,<span class="string">'a'</span>))
+assert(hasfield(b,<span class="string">'b'</span>) == hasfieldrx(b,<span class="string">'b'</span>))
+assert(hasfield(c,<span class="string">'b'</span>) == hasfieldrx(c,<span class="string">'b'</span>))
+assert(hasfield(c,<span class="string">'e'</span>) == hasfieldrx(c,<span class="string">'e'</span>))
+assert(hasfield(d,<span class="string">'waldo'</span>)==hasfieldrx(d,<span class="string">'waldo'</span>))
+[x1,L1] = hasfield(d,<span class="string">'d'</span>)
+[x2,L2] = hasfieldrx(d,<span class="string">'d'</span>)
+assert(x1==x2 &amp;&amp; L1==L2)
+</pre><pre class="codeoutput">
+x1 =
+
+  logical
+
+   1
+
+
+L1 =
+
+     2
+
+
+x2 =
+
+  logical
+
+   1
+
+
+L2 =
+
+     2
+
+</pre><h2 id="6">test regex checking</h2><p>simple</p><pre class="codeinput">[x,L] = hasfieldrx(Lorem,<span class="string">'i[pP]Sum'</span>)
+assert(x==1&amp;&amp;L==2);
+[x,L] = hasfieldrx(Lorem,<span class="string">'i[pP][sS]um'</span>)
+assert(x==1&amp;&amp;L==1);
+
+<span class="comment">% a bit more</span>
+[x1,L1] = hasfield(d,<span class="string">'waldo'</span>)
+[x2,L2] = hasfieldrx(d,<span class="string">'wal[db]o'</span>)
+assert(x1==x2 &amp;&amp; L1==(L2+1))
+
+<span class="comment">% position matching, wildcard matching, and level limiting</span>
+[x,L] = hasfieldrx(Lorem,<span class="string">'te'</span>)
+assert(x==1&amp;&amp;L==2);
+[x,L] = hasfieldrx(Lorem,<span class="string">'^te'</span>)
+assert(x==1&amp;&amp;L==3);
+[x,L] = hasfieldrx(Lorem,<span class="string">'.*temp.*o.*r$'</span>)
+assert(x==1&amp;&amp;L==4);
+[x,L1] = hasfieldrx(Lorem,<span class="string">'^.$'</span>)
+[x,L2] = hasfieldrx(Lorem,<span class="string">'^.$'</span>,L1-1)
+assert(x==0&amp;&amp;L2==(L1-1));
+</pre><pre class="codeoutput">
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     2
+
+
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     1
+
+
+x1 =
+
+  logical
+
+   1
+
+
+L1 =
+
+     4
+
+
+x2 =
+
+  logical
+
+   1
+
+
+L2 =
+
+     3
+
+
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     2
+
+
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     3
+
+
+x =
+
+  logical
+
+   1
+
+
+L =
+
+     4
+
+
+x =
+
+  logical
+
+   1
+
+
+L1 =
+
+     3
+
+
+x =
+
+  logical
+
+   0
+
+
+L2 =
+
+     2
+
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test Cases
+clear('a','b','c','d','Lorem');
+% non-struct case
+a = 0
+
+% basic case, 1 iteration
+b.a = 1
+
+% basic case, multiple options
+c.a = 1;
+c.b = 2;
+c.c = 3;
+c.d = 4
+
+% multilevel case
+d.a = 1;
+
+d.b.a = 1;
+d.b.b = 2;
+d.b.c = 3;
+d.b.d = 4;
+
+d.c.a = 1;
+d.c.b = 2;
+d.c.c = 3;
+d.c.d.a = 1;
+d.c.d.b.waldo = 'where?'
+d.c.d.walbo = 'wear?'
+
+Lorem.ipsum = 'sit';
+Lorem.sit.iPSum = 'sit';
+Lorem.adipiscing.a1tempo = 'incididunt';
+Lorem.adipiscing.a2te123mor = 'incididunt';
+Lorem.adipiscing.id.a.temp91o2j1r = 'incididunt';
+Lorem.adipiscing.id.tepor = 'incididunt';
+
+%% Soft error on non-struct
+assert(hasfield(a)==0)
+
+%% Test cases where result should be equal to isfield()
+assert(hasfield(b,'a') == isfield(b,'a'))
+assert(hasfield(b,'b') == isfield(b,'b'))
+assert(hasfield(c,'b') == isfield(c,'b'))
+assert(hasfield(c,'e') == isfield(c,'e'))
+
+%% Multilevel feature tests
+assert(hasfield(d,'waldo')==1)
+
+[x,L] = hasfield(d,'d')
+assert(x==1 && L==2)
+
+[x,L] = hasfield(d,'waldo')
+assert(x==1 && L==4)
+
+%% regex variant should match vanilla
+assert(hasfield(b,'a') == hasfieldrx(b,'a'))
+assert(hasfield(b,'b') == hasfieldrx(b,'b'))
+assert(hasfield(c,'b') == hasfieldrx(c,'b'))
+assert(hasfield(c,'e') == hasfieldrx(c,'e'))
+assert(hasfield(d,'waldo')==hasfieldrx(d,'waldo'))
+[x1,L1] = hasfield(d,'d')
+[x2,L2] = hasfieldrx(d,'d')
+assert(x1==x2 && L1==L2)
+
+%% test regex checking
+% simple
+[x,L] = hasfieldrx(Lorem,'i[pP]Sum')
+assert(x==1&&L==2);
+[x,L] = hasfieldrx(Lorem,'i[pP][sS]um')
+assert(x==1&&L==1);
+
+% a bit more
+[x1,L1] = hasfield(d,'waldo')
+[x2,L2] = hasfieldrx(d,'wal[db]o')
+assert(x1==x2 && L1==(L2+1))
+
+% position matching, wildcard matching, and level limiting
+[x,L] = hasfieldrx(Lorem,'te')
+assert(x==1&&L==2);
+[x,L] = hasfieldrx(Lorem,'^te')
+assert(x==1&&L==3);
+[x,L] = hasfieldrx(Lorem,'.*temp.*o.*r$')
+assert(x==1&&L==4);
+[x,L1] = hasfieldrx(Lorem,'^.$')
+[x,L2] = hasfieldrx(Lorem,'^.$',L1-1)
+assert(x==0&&L2==(L1-1));
+
+##### SOURCE END #####
+--></body></html>
