@@ -130,7 +130,7 @@ hassumedorgpopup = uicontrol('Style','popupmenu','Units','normalized',...
 
 hloadmaps = uicontrol('Style','popupmenu','Units','normalized','Tag','Load',...
 	'Position',[0.32, 0.75',0.1, 0.05],...
-	'String',{'Load all (default)','Only Maps','Only Spectra'});
+	'String',{'Load all (default)', 'Only Maps', 'Only Spectra', 'Only Files'});
 
 %%% TODO: Make some kind of saved file that this GUI opens to keep track of
 %%% previously selected directory
@@ -716,16 +716,17 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		loadtype = loadstr{loadval};
 		
 		if contains(loadtype, 'maps', 'IgnoreCase', true)
-			removelist_boolvec = contains(dirtype, 'map');
-			displaydirs(removelist_boolvec) = [];
+			removelist_boolvec = ~contains(dirtype, 'map');
 		elseif contains(loadtype, 'spectra', 'IgnoreCase',true)
-			removelist_boolvec = contains(dirtype, 'stack');
-			displaydirs(removelist_boolvec) = [];
+			removelist_boolvec = ~contains(dirtype, 'stack');
         elseif contains(loadtype, 'file', 'IgnoreCase',true)
-            removelist_boolvec = contains(dirtype, 'file');
-            displaydirs(removelist_boolvec) = [];
-		end
-		
+            removelist_boolvec = ~contains(dirtype, 'file');
+        else
+            removelist_boolvec = [];
+        end
+        
+		displaydirs(removelist_boolvec) = [];
+        filedirs(removelist_boolvec) = [];
 		
         set(hlistready,'String',displaydirs);
         set(hanalyze,'Enable','on');
@@ -918,6 +919,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         % Preallocation
         [OVFvec, Sizevec, PartLabelVec, CompSizeVec, DiVec, DalphaVec, DgammaVec] = deal([]);
         [partDirList, croppedOVF, partMask, cSpecParts] = deal(cell(0));
+        [partEnergy, normPartSpec, normPartOrgSpec, normPartOVFSpec] = deal(cell(0));
         
         lfiledirs = length(filedirs);
         
@@ -943,17 +945,25 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             PartLabelVec = [PartLabelVec, currSnew.PartLabel];
             CompSizeVec = [CompSizeVec; currSnew.CompSize];
             
-            %
+            % Cropping
             currSnew = CropParticles(currSnew);
             partMask = [partMask ; currSnew.CroppedParticles.partMask];
             croppedOVF = [croppedOVF ; currSnew.CroppedParticles.OVFParts];
             cSpecParts = [cSpecParts ; currSnew.CroppedParticles.cSpecParts];
             
-            %
+            % Mixing State
             currSnew = MixingState_CComp(currSnew);
             DiVec = [DiVec ; currSnew.Mixing.Di];
             DalphaVec = [DalphaVec; currSnew.Mixing.Dalpha];
             DgammaVec = [DgammaVec; currSnew.Mixing.Dgamma];
+            
+            % Spectra
+            currSnew = SpectraProcessing(currSnew);
+            partEnergy = [partEnergy; currSnew.partEnergy];
+            normPartSpec = [normPartSpec; currSnew.normPartSpec];
+            normPartOrgSpec = [normPartOrgSpec; currSnew.normOrgSpec];
+            normPartOVFSpec = [normPartOVFSpec; currSnew.normOVFSpec];
+            
         end
         close(hwait);
         
@@ -972,6 +982,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors.DiVec = DiVec;
         DataVectors.DalphaVec = DalphaVec;
         DataVectors.DgammaVec = DgammaVec;
+        
+        DataVectors.partEnergy = partEnergy;
+        DataVectors.normPartSpec = normPartSpec;
+        DataVectors.normPartOrgSpec = normPartOrgSpec;
+        DataVectors.normPartOVFSpec = normPartOVFSpec;
         
 %         DataVectors.Chi = (DataVectors.Dalpha - 1) ./ (DataVectors.Dgamma - 1);
         
@@ -2408,6 +2423,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         roi = drawpoint();
         roipos = round(roi.Position);
         currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
+        currSnew = SpectraProcessing(currSnew);
+        
         partnum = currSnew.LabelMat(roipos(2), roipos(1));
         
         if partnum == 0
@@ -2418,7 +2435,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
         
         figure;
-        plot(currSnew.eVenergy, currSnew.ParticleSpec{partnum});
+        plot(currSnew.eVenergy, currSnew.normOrgSpec{partnum});
         pfig;
         
     end

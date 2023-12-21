@@ -57,6 +57,10 @@ S.spectr=zeros(size(structin.spectr,1),size(structin.spectr,2),size(structin.spe
 xAxislabel=[0,S.Xvalue];
 yAxislabel=[0,S.Yvalue];
 
+if eVlength > 20 %adaptive thresholding doesn't work well for stacks (I think for small FOVs but one step at a time)
+    threshMethod = 'O';
+end
+
 
 %% Background Subtraction
 
