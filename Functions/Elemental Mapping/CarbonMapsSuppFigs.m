@@ -260,12 +260,12 @@ if ~isempty(sp2idx)
     Snew.sp2=sp2NoThresh;
    
 	rawsp2 =(doublecarb1./carb)  .*  (0.4512/0.8656);
-	rawsp2(isinf(rawsp2)==1) = 0;
-    rawsp2(isnan(rawsp2)==1) = 0;
+	rawsp2(isinf(rawsp2)) = 0;
+    rawsp2(isnan(rawsp2)) = 0;
     sp2=(doublecarb1./carb)  .*  (0.4512/0.8656).*spmask; % calculate %sp2 of masked images
     errsp2 = (0.4512./0.8656).*sqrt((errdoublecarb./carb).^2 + ((doublecarb.*errcarb./carb.^2).^2));
-    sp2(isinf(sp2)==1) = 0;
-    sp2(isnan(sp2)==1) = 0;
+    sp2(isinf(sp2)) = 0;
+    sp2(isnan(sp2)) = 0;
        
 	sp2(sp2 < 0) = 0;
 	sp2frac = sp2;
