@@ -357,7 +357,7 @@ hODlimitcheck = uicontrol(...
     'Tag','DataViewer',...
     'Value',0,...
     'Position',ODlimitcheckPOS,...
-    'Callback',{@hODlimit_callback});
+    'Callback',{@hselect_callback});
 
 hCMapSilhouetteCheck = uicontrol('Style','checkbox','Value',0,'Visible','off','Units','normalized','String','C Maps Silhouette',...
     'Tag','DataViewer',...
@@ -1707,7 +1707,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
     end
 
-%% hright adds 1 to imageselectionvalue
+%% Controlling imageselectionvalue and selected FOV with keys/buttons
+%hright and left adds/subtracts 1 to imageselectionvalue
     function hright_callback(~,~)
         %global imageselectionvalue
         if imageselectionvalue < 4
@@ -1716,7 +1717,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         hselect_callback();
     end
 
-%% hleft subtracts 1 to imageselectionvalue
     function hleft_callback(~,~)
         %global imageselectionvalue
         if imageselectionvalue > 1
@@ -1724,6 +1724,45 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
         hselect_callback();
     end
+
+% keypressfcnfigure arrow key functions
+    function figkeypress_callback(source,~)
+        KEY = get(source,'CurrentKey');
+        radiosingleval = get(hradiosingle,'Value');
+        listreadyval = get(hlistready,'Value');
+        listreadystr = get(hlistready,'String');
+        listreadynum = length(listreadystr);
+        
+        popupval = get(hroutinepopup,'Value');
+        popupstr = get(hroutinepopup,'String');
+        
+        if strcmp(popupstr{popupval},'Data Viewer')
+            
+            if strcmp(KEY,'downarrow')
+                if listreadyval < listreadynum
+                    listreadyval = listreadyval + 1;
+                    set(hlistready,'Value',listreadyval);
+                    hselect_callback()
+                end
+            elseif strcmp(KEY,'uparrow')
+                if listreadyval > 1
+                    listreadyval = listreadyval - 1;
+                    set(hlistready,'Value',listreadyval);
+                    hselect_callback()
+                end
+            end
+            
+            
+            if radiosingleval == 1
+                if strcmp(KEY,'leftarrow')
+                    hleft_callback();
+                elseif strcmp(KEY,'rightarrow')
+                    hright_callback();
+                end
+            end
+        end
+    end
+
 
 %% hroutinepopupmenu switches routine callback
     function hroutinepopup_callback(source,~)
@@ -1821,43 +1860,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
     end
 
-%% keypressfcnfigure arrow key functions
-    function figkeypress_callback(source,~)
-        KEY = get(source,'CurrentKey');
-        radiosingleval = get(hradiosingle,'Value');
-        listreadyval = get(hlistready,'Value');
-        listreadystr = get(hlistready,'String');
-        listreadynum = length(listreadystr);
-        
-        popupval = get(hroutinepopup,'Value');
-        popupstr = get(hroutinepopup,'String');
-        
-        if strcmp(popupstr{popupval},'Data Viewer')
-            
-            if strcmp(KEY,'downarrow')
-                if listreadyval < listreadynum
-                    listreadyval = listreadyval + 1;
-                    set(hlistready,'Value',listreadyval);
-                    hselect_callback()
-                end
-            elseif strcmp(KEY,'uparrow')
-                if listreadyval > 1
-                    listreadyval = listreadyval - 1;
-                    set(hlistready,'Value',listreadyval);
-                    hselect_callback()
-                end
-            end
-            
-            
-            if radiosingleval == 1
-                if strcmp(KEY,'leftarrow')
-                    hleft_callback();
-                elseif strcmp(KEY,'rightarrow')
-                    hright_callback();
-                end
-            end
-        end
-    end
 
 %% listready callback
     function hlistready_callback(~,~)
@@ -2044,9 +2046,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	function hBeersTest_callback(~,~)
 		readyvalue = get(hlistready,'Value');
 		TestingBeersLaw(Dataset.(Datasetnames{readyvalue}).Snew);
-		
-		
-		
 	end
 
 %% prepost maps
@@ -2267,15 +2266,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		end
 		
 		
-	end
-
-
-%% Visualizing limit on OD linearity
-    function hODlimit_callback(~,~)
-        hselect_callback();
     end
-
-
 
 %% Control raw images radio button group
     function rawbg_callback(~,event)
@@ -2532,6 +2523,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Position',[0.3,0.22,0.1,0.07],...
             'Callback',{@hdefaultthresh_callback});
         
+        hFineThreshControl = uicontrol('Style','checkbox','Parent',threshfig,...
+            'Units','normalized','String','Fine Thresholding Control (x10)',...
+            'Position',[0.7, 0.22, 0.1, 0.05],...
+            'Callback',{@hFineThreshControl_callback});
+        
         hSmallParticleRemoverSlide = uicontrol(...
             'Style','slider',...
             'Parent',threshfig,...
@@ -2569,6 +2565,22 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 'Clear Binmap Border', false);
             
             plotimshowpair();
+        end
+        
+        function hFineThreshControl_callback(~,~)
+            fineControlCheck = get(hFineThreshControl,'Value');
+            currthreshval = get(hthreshslide,'Value');
+            
+            if fineControlCheck
+                set(hthreshslide,...
+                    'Min', max(currthreshval - 1,0),...
+                    'Max', currthreshval + 1);
+            else
+                set(hthreshslide,...
+                    'Min', 0,...
+                    'Max', 20);
+            end
+            
         end
         
         function hthreshslide_smallParticleRemover_callback(~,~)
