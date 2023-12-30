@@ -1361,24 +1361,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				catch
 				end
                 
-                energy= Dataset.(Datasetnames{readyvalue}).Snew.eVenergy;
-                Xvalue = Dataset.(Datasetnames{readyvalue}).Snew.Xvalue;
-                Yvalue = Dataset.(Datasetnames{readyvalue}).Snew.Yvalue;
-                xAxislabel = [0,Dataset.(Datasetnames{readyvalue}).Snew.Xvalue];
-                yAxislabel = [0,Dataset.(Datasetnames{readyvalue}).Snew.Yvalue];
-                Izero = Dataset.(Datasetnames{readyvalue}).Snew.Izero;
-                Sspectr = Dataset.(Datasetnames{readyvalue}).Snew.spectr;
-                
-                for i = 1:length(energy)
-                    stack(:,:,i) = Izero(i,2).*exp(-Sspectr(:,:,i)); %retreiving raw intensity information from OD info
-                end
-                
-                Mask = Dataset.(Datasetnames{readyvalue}).Snew.mask;
-                binmap = Dataset.(Datasetnames{readyvalue}).Snew.binmap;
-                imagebuffer=mean(stack,3);
-                LabelMat = Dataset.(Datasetnames{readyvalue}).Snew.LabelMat;
-                MatSiz=size(LabelMat);
-
                 set(hplottitle,'String',Datasetnames{readyvalue});
                 
                 switch popupimagestr{popupimageval}
@@ -1397,9 +1379,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                         set(helementpanel,'Visible','off');
                         set(rawbg,'Visible','on');
                         
-                        
-                        readyvalue = get(hlistready,'Value');
-                        currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
                         currelements= fieldnames(currSnew.elements);
                         
                         %Making only buttons which have elemental data visible
@@ -1430,15 +1409,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     case 'Organic Vol. Fractions'
                         set(helementpanel,'Visible','off');
                         set(rawbg,'Visible','off');
-                        readyvalue = get(hlistready,'Value');
+
                         radiomultipleval = get(hradiomultiple,'Value');
                         radiosingleval = get(hradiosingle,'Value');
-                        
-                        energy = currSnew.eVenergy;
-                        
-                        [~,rawidx(1)] = min(abs(energy - 278));
-                        [~,rawidx(2)] = min(abs(energy - 320));
-                        
                         
                         if radiomultipleval == 1
                             set(hpanelsingle,'Visible','off');
@@ -1446,45 +1419,41 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             oldmultiplot = findobj('Parent',hpanelmultiple);
                             delete(oldmultiplot);
                             
+                            handle{1} = subplot(2,2,1);
+                            Plot_RawIm(currSnew, 278);
+                            set((handle{1}),'Parent',hpanelmultiple);
                             
-                            for i = 1:2
-                                handle{i} = subplot(2,2,i);
-                                imagesc([0,Xvalue],[0,Yvalue],Sspectr(:,:,rawidx(i)))
-                                %             set(gca,'Clim',[0,1.5]),
-                                axis image
-                                xlabel('X (\mum)');
-                                ylabel('Y (\mum)');
-                                if ODlimitval == 1
-                                    colormap(handle{i},graycmap);
-                                    caxis([0,1.6]);
-                                else
-                                    colormap(handle{i},gray);
-                                end
-                                plottitle=sprintf('%geV',energy(rawidx(i)));
-                                title(plottitle);
-                                set((handle{i}),'Parent',hpanelmultiple);
-                                cbar{i} = colorbar;
-                            end
+                            handle{2} = subplot(2,2,2);
+                            Plot_RawIm(currSnew, 320);
+                            set((handle{2}),'Parent',hpanelmultiple);
                             
                             handle{3} = subplot(2,2,3);
-                            imagesc([0,Xvalue],[0,Yvalue],currSnew.ThickMap(:,:,end));
-                            axis image
-                            xlabel('X (\mum)');
-                            ylabel('Y (\mum)');
-                            colormap(handle{3},parula)
-                            title('Organic Vol Frac');
                             set(handle{3},'Parent',hpanelmultiple);
-                            cbar{3} = colorbar;
+                            Plot_OVF(currSnew);
                             
                             handle{4} =  subplot(2,2,4);
-                            volfracdist = max(currSnew.VolFrac) - min(currSnew.VolFrac);
-                            %nhistbins = round(volfracdist./0.05);
-                            histogram(currSnew.VolFrac,[0:0.05:1]);
-                            xlabel('Org Vol Frac');
-                            ylabel('Particle #');
-                            set(handle{4},'Parent',hpanelmultiple,'XLim',[0,1]);
+                            set(handle{4},'Parent',hpanelmultiple);
+                            Plot_2DHistOVF(currSnew);
                             
                         elseif radiosingleval == 1
+                            set(hpanelmultiple,'Visible','off')
+                            set(hpanelsingle,'Visible','on')
+                            delete(gca);
+                            
+                            axes('Units','normalized',...
+                                'Position',[0.07,0.06,0.9,0.9],...
+                                'Parent',hpanelsingle,'Tag','haxes',...
+                                'HandleVisibility','on');
+                            switch imageselectionvalue
+                                case 1
+                                    Plot_RawIm(currSnew, 278);
+                                case 2
+                                    Plot_RawIm(currSnew, 320);
+                                case 3
+                                    Plot_OVF(currSnew);
+                                case 4
+                                    Plot_2DHistOVF(currSnew);
+                            end
                         end
                         
                         
@@ -1499,50 +1468,20 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             delete(oldmultiplot);
                             
                             handle1 = subplot(2,2,1);
-                            imagesc(xAxislabel,yAxislabel,imagebuffer);
                             set(handle1,'Parent',hpanelmultiple);
-                            axis image
-                            colorbar
-                            title('Raw Intensity Stack Mean')
-                            colormap gray
-                            xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                            ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+                            Plot_RawMean(currSnew);
                             
                             handle2 = subplot(2,2,2);
-%                             imagesc(xAxislabel,yAxislabel,mean(Sspectr,3));
-                            imagesc(xAxislabel, yAxislabel, LabelMat);
                             set(handle2,'Parent',hpanelmultiple);
-                            axis image
-                            colorbar
-                            if ODlimitval == 1
-                                colormap(handle2,graycmap);
-                                caxis(handle2,[0,1.6]);
-                            else
-                                colormap(gray);
-                            end
-%                             title('Optical Density Stack Mean')
-                            title('LabelMat');
-                            xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                            ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
-                            
-                            
+                            Plot_LabelMat(currSnew);
+
                             handle3 = subplot(2,2,3);
-                            imagesc(xAxislabel,yAxislabel,Mask);
                             set(handle3,'Parent',hpanelmultiple);
-                            colorbar
-                            axis image
-                            title('Izero Region Mask')
-                            xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                            ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+                            Plot_IZeroMask(currSnew);
                             
                             handle4 = subplot(2,2,4);
-                            imagesc(xAxislabel,yAxislabel,binmap);
                             set(handle4,'Parent',hpanelmultiple);
-                            colorbar
-                            axis image
-                            title('Visualization Binmap');
-                            xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                            ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+                            Plot_Binmap(currSnew);
 
                             
                         elseif radiosingleval == 1
@@ -1550,47 +1489,20 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             set(hpanelsingle,'Visible','on')
                             delete(gca);
                             
-                            axes(...
-                                'Units','normalized',...
+                            axes('Units','normalized',...
                                 'Position',[0.07,0.06,0.9,0.9],...
-                                'Parent',hpanelsingle,...
-                                'Tag','haxes',...
+                                'Parent',hpanelsingle,'Tag','haxes',...
                                 'HandleVisibility','on');
                             
                             switch imageselectionvalue
                                 case 1
-                                    imagesc(xAxislabel,yAxislabel,imagebuffer);
-                                    axis image
-                                    colorbar
-                                    title('Raw Intensity Stack Mean')
-                                    colormap gray
-                                    xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                                    ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+                                    Plot_RawMean(currSnew);
                                 case 2
-                                    imagesc(xAxislabel,yAxislabel,mean(Sspectr,3));
-                                    axis image
-                                    colorbar
-                                    if ODlimitval == 1
-                                        colormap(graycmap);
-                                        caxis([0,1.6]);
-                                    else
-                                        colormap(gray);
-                                    end
-                                    title('Optical Density Stack Mean')
-                                    xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                                    ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+                                    Plot_LabelMat(currSnew);
                                 case 3
-                                    imagesc(xAxislabel,yAxislabel,Mask);
-                                    colorbar
-                                    axis image
-                                    title('Izero Region Mask')
-                                    xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-                                    ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+                                    Plot_IZeroMask(currSnew);
                                 case 4
-                                    plot(Izero(:,1),Izero(:,2));
-                                    title('Izero')
-                                    xlabel('Photon energy (eV)','FontSize',11,'FontWeight','normal')
-                                    ylabel('Raw Counts','FontSize',11,'FontWeight','normal')
+                                    Plot_Binmap(currSnew);
                             end
                             
                         end
@@ -1622,11 +1534,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                             set(hpanelsingle,'Visible','on')
                             delete(gca);
                             
-                            hax_singlepanel = axes(...
-                                'Units','normalized',...
+                            axes('Units','normalized',...
                                 'Position',[0.07,0.06,0.9,0.9],...
-                                'Parent',hpanelsingle,...
-                                'Tag','haxes',...
+                                'Parent',hpanelsingle,'Tag','haxes',...
                                 'HandleVisibility','on');
                             
                             switch imageselectionvalue
@@ -1637,7 +1547,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                                 case 3
                                     Plot_sp2(currSnew);
                                 case 4
-                                    Plot_CMap(currSnew, hax_singlepanel)
+                                    Plot_CMap(currSnew);
                             end
                             
                         end
@@ -1695,14 +1605,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %                         specidx = imageselectionvalue;
 %                         plot(currSnew.eVenergy, currSnew.ParticleSpec{specidx});
                 end
-                
-            case 'EDXmapview'  %%%%%Unfinished%%%%
-                currentdirpath = Dataset.(Datasetnames{readyval}).Directory;
-                cd(currentdirpath);
-                [~,currfolder,~] = fileparts(currentdirpath);
-                EDXdatafile = sprintf('%s',currfolder,'.mat');
-                load(EDXdatafile);
-                
                 
         end
     end
@@ -3127,7 +3029,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		ylabel('Y (\mum)');
 		colormap(gca,parula);
 		title('Organic Vol Frac');
-		cbar{3} = colorbar;
+		colorbar;
     end
 
     function Plot_2DHistOVF(Snew, varargin)
@@ -3150,7 +3052,90 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         colorbar        
         
     end
+
+    function Plot_RawMean(Snew, varargin)
+        xAxislabel = [0,Snew.Xvalue];
+        yAxislabel = [0,Snew.Yvalue];
+        for i = 1:length(Snew.eVenergy)
+            stack(:,:,i) = Snew.Izero(i,2).*exp(-Snew.spectr(:,:,i)); %retreiving raw intensity information from OD info
+        end
+        imagebuffer=mean(stack,3);
+        imagesc(xAxislabel,yAxislabel,imagebuffer);
         
+        axis image
+        colorbar
+        title('Raw Intensity Stack Mean')
+        colormap gray
+        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
+        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+        
+    end
+
+    function Plot_LabelMat(Snew, varargin)
+        ODLimitVal = get(hODlimitcheck,'Value');
+        
+        xAxislabel = [0,Snew.Xvalue];
+        yAxislabel = [0,Snew.Yvalue];
+        imagesc(xAxislabel, yAxislabel, Snew.LabelMat);
+        colorbar
+        if ODLimitVal == 1
+            colormap(graycmap);
+            caxis([0,1.6]);
+        else
+            colormap(gray);
+        end
+        
+        axis image
+        title('LabelMat');
+        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
+        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+        
+    end
+
+    function Plot_IZeroMask(Snew, varargin)
+        xAxislabel = [0,Snew.Xvalue];
+        yAxislabel = [0,Snew.Yvalue];
+        imagesc(xAxislabel,yAxislabel,Snew.mask);
+        colorbar
+        axis image
+        title('Izero Region Mask')
+        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
+        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+
+    end
+
+    function Plot_Binmap(Snew, varargin)
+        xAxislabel = [0,Snew.Xvalue];
+        yAxislabel = [0,Snew.Yvalue];
+        imagesc(xAxislabel,yAxislabel,Snew.binmap);
+        colorbar
+        axis image
+        title('Visualization Binmap');
+        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
+        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+    end
+
+    function Plot_RawIm(Snew, energy, varargin)
+        ODLimitVal = get(hODlimitcheck, 'Value');
+        
+        [energyVal, energyIdx] = ClosestValue(Snew.eVenergy, energy, [energy-10, energy+10]);
+        imagesc([0,Snew.Xvalue],[0,Snew.Yvalue],Snew.spectr(:,:,energyIdx))
+        
+        if ODLimitVal
+            colormap(graycmap);
+            caxis([0,1.6]);
+        else
+            colormap(gray);
+        end
+        plottitle=sprintf('%g eV',energyVal);
+        title(plottitle);
+        axis image
+        xlabel('X (\mum)');
+        ylabel('Y (\mum)');
+        colorbar;
+        
+    end
+
 
 %% Setting Starting Directories
     % Default
