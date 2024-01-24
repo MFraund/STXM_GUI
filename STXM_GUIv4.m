@@ -1496,7 +1496,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     Dataset.(currfov).binadjtest = tempdataset.binadjtest;
                 end
                 
-                if hasfield(tempdataset, 'threshlevel',1)
+                if hasfield(tempdataset, 'gamma',1)
                     Dataset.(currfov).threshlevel = tempdataset.Snew.gamma;
                 end
                 
