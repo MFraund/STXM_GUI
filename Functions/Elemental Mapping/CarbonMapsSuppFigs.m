@@ -99,69 +99,9 @@ sp2im(sp2im<0) = 0;
 carboxim(carboxim<0) = 0;
 post(post<0) = 0;
 
-
-% %%% Find particles
-% meanim = sum(Snew.spectr,3); 
-% 
-% if isempty(carboxidx)
-%     meanim=Snew.spectr(:,:,postidx);
-% else  %I don't know what this else segment does?  if carboxidx is empty, this else will never be run
-%     meanim=Snew.spectr(:,:,carboxidx);
-% end
-% 
-% meanim(meanim>0.2)=0.2;
-% meanim(meanim<0) = 0;
-
-%%%%%--------------------------------%%%%%--------------------------------
-% Allowing for manualBinmapCheck to == 1 is for backwards compatibility
-% with other versions
-% if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
-%     rawbinmap = ~Snew.mask;
-%     templabelmat = bwlabel(rawbinmap,8);
-%     
-%     meanfig = figure;
-%     imagesc(mean(Snew.spectr,3));
-%     movegui(meanfig,'west');
-%     
-%     binfig = figure;
-%     imagesc(rawbinmap);
-%     colormap('gray');
-%     movegui(binfig,'east');
-%     
-%     title('Pick Particles to Remove, Right Click on Last Point');
-%     [xlist, ylist] = getpts(binfig);
-%     
-%     close(binfig);
-%     close(meanfig);
-%     
-%     for i = 1:length(xlist)
-%         currpartlabel = templabelmat(round(ylist(i)),round(xlist(i)));
-%         templabelmat(templabelmat == currpartlabel) = 0;
-%     end
-%     
-%     binmap = templabelmat;
-%     binmap(templabelmat > 0) = 1;
-%     
-%     binmap = bwareaopen(binmap, rmPixelSize, 8);
-%     
-% elseif strcmpi(manualBinmapCheck,'given')
-%     binmap = givenBinmap;
-%     if isempty(binmap) | binmap == 0
-%         Stemp = makinbinmap(Snew);
-%         binmap = Stemp.binmap;
-%     end
-% else
-%     binmap = ~Snew.mask;
-%     binmap = imclearborder(binmap);
-%     binmap = bwareaopen(binmap, rmPixelSize, 8);
-% end
-% 
-% %Define Label Matrix
-% LabelMat=bwlabel(binmap,8);
-
-%%%%%--------------------------------
 binmap = Snew.binmap;
 LabelMat = Snew.LabelMat;
+
 %%% Assign Particle Serial Numbers and directories
 % NumPart=max(max(LabelMat));
 % PartZero=str2double(strcat(Snew.particle(5:end),'0000'));
@@ -173,9 +113,6 @@ LabelMat = Snew.LabelMat;
 % SearchString=strcat('*F',Snew.particle,'*.mat');
 % FName=dir(SearchString);
 % PartDirs(:,2)={FName(1).name};
-
-
-
 
 %% Carbon Map %%%%%%%%%%%%%%%%%%%%%%%%%  Carbon Map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 carb=post-pre;
@@ -281,21 +218,6 @@ if ~isempty(sp2idx)
     finSp2mask(finSp2mask>0)=1;
     finSp2mask = bwareaopen(finSp2mask,8, 8);
     
-    % figure,imagesc(finSp2mask),colormap gray
-    
-    % get rid of small few pixel regions
-%     finSp2mask=bwlabel(finSp2mask,8);
-% 
-%     for i=1:max(max(finSp2mask))
-%         [a1,b1]=find(finSp2mask==i);
-%         linidx1=sub2ind(size(finSp2mask),a1,b1);
-%         if length(linidx1)<7
-%             finSp2mask(linidx1)=0;
-%         end
-%     end
-%     finSp2mask(finSp2mask>0)=1;
-%     bw=im2bw(finSp2mask);
-    % figure,imagesc(bw),colormap gray
     %ImStruct=regionprops(bw,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexHull');
     ImStruct=regionprops(finSp2mask,'Eccentricity','MajorAxisLength','MinorAxisLength','ConvexArea','Area');
     Ecc = reshape([ImStruct.Eccentricity],size(ImStruct));
@@ -315,8 +237,6 @@ else
     finSp2mask=zeros(size(binmap));
     doublecarb=zeros(size(binmap));
 end
-
-% figure,imagesc(finSp2mask),colormap gray
 
 %% Combine maps, 
 BinCompMap{1}=carbmask;
@@ -404,20 +324,13 @@ else
 end
 
 %%Define outputs
-% Snew.LabelMat=LabelMat;
-% Snew.NumParticles = max(max(LabelMat));
 Snew.PartLabel=PartLabel;
 % Snew.PartSN = PartSN';
-% binmap=zeros(size(LabelMat));
-% binmap(LabelMat>0)=1;
-% Snew.binmap=binmap;
-% Snew=ParticleSize(Snew);
 XSiz=Snew.Xvalue/MatSiz(1);
 YSiz=Snew.Yvalue/MatSiz(2);
 CompSize=CompSize.*(XSiz*YSiz); %% Area of components in um^2
 Snew.CompSize=CompSize;
-% Snew.PartDirs=PartDirs;
-   
+
 RgbMat(:,:,1)=RedMat;
 RgbMat(:,:,2)=GreMat;
 RgbMat(:,:,3)=BluMat;

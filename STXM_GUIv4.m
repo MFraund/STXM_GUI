@@ -33,12 +33,10 @@ hremove = uicontrol(...
     'String','Remove Selected',...
     'Units','normalized',...
     'Enable','off',...
-    'Position',[0.11,0.01,0.09,0.05],...
+    'Position',[0.19,0.88,0.05,0.053],...
     'Callback',{@hremove_callback});
 
-hreadytitle = uicontrol(...
-    'Style','text',...
-    'String','Data to Run',...
+hreadytitle = uicontrol('Style','text','String','Data to Run',...
     'Units','normalized',...
     'Position',[0.12,0.88,0.07,0.02]);
 
@@ -49,14 +47,12 @@ hlistready = uicontrol(...
     'Units','normalized',...
     'KeyPressFcn',{@hlistreadykey_callback},...
     'Callback',{@hlistready_callback},...
-    'Position',[0.01,0.07,0.3,0.8]);
+    'Position',[0.01,0.17,0.3,0.7]);
 
 % Analysis Window Type
 routineString = {...
 	'Load & Run Data',...
-	'Data Viewer',...
-	'StackLab',...
-	'EDXmapview'};
+	'Data Viewer'};
 
 hroutinepopup = uicontrol(...
     'Style','popupmenu',...
@@ -102,7 +98,7 @@ hload_recursive = uicontrol('Style','pushbutton', 'String','Load All Recursive',
 
 hanalyze = uicontrol('Style','pushbutton', 'String','Analyze All',...
     'Units','normalized', 'Enable','off','Tag','Load',...
-    'Position',[0.21,0.88,0.1,0.053],...
+    'Position',[0.24,0.88,0.07,0.053],...
     'Callback',{@hanalyze_callback});
 
 
@@ -163,20 +159,45 @@ hSP2Thresh_edit = uicontrol('style','edit','Units','normalized',...
     'Position',[0.45, 0.7, 0.1, 0.05]);
 
 
-%% Components seen in Data Viewer screen
+%% Data Viewer Components
 %%%% 
 %%%%
 
-
+%% >> Particle Collections
 haveragevariable = uicontrol(...
 	'Style','pushbutton',...
 	'String','Average Variable',...
 	'Units','normalized',...
     'Tag','DataViewer',...
-	'Position',[0.01,0.01,0.09,0.05],...
+	'Position',[0.01,0.11,0.09,0.05],...
 	'Callback',{@haveragevariable_callback});
 
+hparticlecollage = uicontrol('Style','pushbutton','String','Particle Collage',...
+    'Units','normalized','Tag','DataViewer','Enable','off',...
+    'Position',[0.11, 0.11, 0.09, 0.05],...
+    'Callback',{@hparticlecollage_callback});
 
+hdatavectorexport = uicontrol('Style','pushbutton','String','Export Updated DV',...
+    'Units','normalized','Tag','DataViewer','Enable','off',...
+    'Position',[0.21, 0.11, 0.09, 0.05],...
+    'Callback',{@hdatavectorexport_callback});
+
+hloadparticlecollection = uicontrol('Style','pushbutton','String','Load Particle Collection',...
+    'Units','normalized','Tag','DataViewer','Position',[0.01,0.05,0.09,0.05],...
+    'Callback',{@hloadparticlecollection_callback});
+
+hsaveparticlecollection = uicontrol('Style','pushbutton','String','Save Particle Collection',...
+    'Units','normalized','Tag','DataViewer','Position',[0.11,0.05,0.09,0.05],'Enable','off',...
+    'Callback',{@hsaveparticlecollection_callback});
+    
+hsaveASparticlecollection = uicontrol('Style','pushbutton','String','Save As Particle Collection',...
+    'Units','normalized','Tag','DataViewer','Position',[0.21,0.05,0.09,0.05],'Enable','off',...
+    'Callback',{@hsaveASparticlecollection_callback});
+
+hcollectionpath = uicontrol('Style','text','String',' No Collection Loaded',...
+    'Units','normalized','Tag','DataViewer','Position',[0.01, 0.02, 0.3, 0.01]);
+
+%% >> Button Groups for Raw Images
 rawbg = uibuttongroup (...
     'Units','normalized',...
     'Visible','off',...
@@ -233,6 +254,7 @@ hOxygenrad = uicontrol(...
     'Tag','DataViewer',...
     'Position',[0.65,0.2,0.3,0.2]);
 
+%% >> Elemental Panel
 heleradlist = cell(6,1);
 heleradlist{1} = hSulfurrad;
 heleradlist{2} = hCarbonrad;
@@ -318,6 +340,7 @@ heleboxlist{4} = hCalciumbox;
 heleboxlist{5} = hNitrogenbox;
 heleboxlist{6} = hOxygenbox;
 
+%% >> Single/Multiple View Panel
 radiosinglePOS = [0.53,0.94,0.1,0.04];
 
 hradiosingle = uicontrol(...
@@ -405,9 +428,11 @@ hdatainfo = uicontrol(...
 	'Visible','off',...
 	'Tag','DataViewer',...
 	'Units','normalized',...
-	'Position',[0.355, 0.75, 0.07, 0.1],...
+	'Position',[0.355, 0.80, 0.07, 0.06],...
 	'String',currDataInfo);
 
+
+%% >> DV Button Components
 hstacklabbutton = uicontrol(...
     'Style','pushbutton',...
     'String','Run StackLab on Selected',...
@@ -482,8 +507,7 @@ hplottitle = uicontrol(...
     'Tag','DataViewer',...
     'Position',titlepos);
 
-hsavecontext = uicontextmenu(...
-    'Parent',f);
+hsavecontext = uicontextmenu('Parent',f);
 
 hmenuitems = uimenu(hsavecontext,...
     'Label','Save plot window',...
@@ -641,6 +665,7 @@ global analyzeruntest;
 analyzeruntest = 0;
 global filedirs;
 global Dataset;
+global DataVectors_GUI;
 global Datasetnames;
 set(hpanelsingle,'Units','pixels')
 pixelPOS = get(hpanelsingle,'Position');
@@ -899,7 +924,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
 		
 		% Setting new string and ensuring a non-existent value isn't selected
-        set(hlistready,'String',readyliststring,'Value',1);
+        newListValue = max(readylistvalue, 1);
+        if newListValue > numel(filedirs)
+            newListValue = newListValue - 1;
+        end
+        
+        set(hlistready,'String',readyliststring,'Value',newListValue);
         
 		% Turning off buttons if needed
 		if isempty(readyliststring)
@@ -967,30 +997,346 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
         close(hwait);
         
-        DataVectors.dirlist = filedirs;
-        DataVectors.partDirList = partDirList;
+        DataVectors_GUI.dirlist = filedirs;
+        DataVectors_GUI.partDirList = partDirList;
         
-        DataVectors.OVF = OVFvec;
-        DataVectors.Size = Sizevec;
-        DataVectors.PartLabel = PartLabelVec;
-        DataVectors.CompSize = CompSizeVec;
+        DataVectors_GUI.OVF = OVFvec;
+        DataVectors_GUI.Size = Sizevec';
+        DataVectors_GUI.PartLabel = PartLabelVec';
+        DataVectors_GUI.CompSize = CompSizeVec;
         
-        DataVectors.partMask = partMask;
-        DataVectors.croppedOVF = croppedOVF;
-        DataVectors.cSpecParts = cSpecParts;
+        DataVectors_GUI.partMask = partMask;
+        DataVectors_GUI.croppedOVF = croppedOVF;
+        DataVectors_GUI.cSpecParts = cSpecParts;
         
-        DataVectors.DiVec = DiVec;
-        DataVectors.DalphaVec = DalphaVec;
-        DataVectors.DgammaVec = DgammaVec;
+        DataVectors_GUI.DiVec = DiVec;
+        DataVectors_GUI.DalphaVec = DalphaVec;
+        DataVectors_GUI.DgammaVec = DgammaVec;
         
-        DataVectors.partEnergy = partEnergy;
-        DataVectors.normPartSpec = normPartSpec;
-        DataVectors.normPartOrgSpec = normPartOrgSpec;
-        DataVectors.normPartOVFSpec = normPartOVFSpec;
+        DataVectors_GUI.partEnergy = partEnergy;
+        DataVectors_GUI.normPartSpec = normPartSpec;
+        DataVectors_GUI.normPartOrgSpec = normPartOrgSpec;
+        DataVectors_GUI.normPartOVFSpec = normPartOVFSpec;
         
-%         DataVectors.Chi = (DataVectors.Dalpha - 1) ./ (DataVectors.Dgamma - 1);
+%         DataVectors_GUI.Chi = (DataVectors_GUI.Dalpha - 1) ./ (DataVectors_GUI.Dgamma - 1);
         
-        assignin('base','DataVectors',DataVectors);
+        assignin('base','DataVectors',DataVectors_GUI);
+        hparticlecollage.Enable = 'on';
+        hsaveparticlecollection.Enable = 'on';
+        hsaveASparticlecollection.Enable = 'on';
+    end
+
+%% Particle Collage
+    function hparticlecollage_callback(~,~)
+        collageFig = figure('Name','Particle Collage','Units','normalized','Position',[0.05, 0.3, 0.3, 0.5],...
+            'KeyPressFcn', {@removeLastSelected},'DeleteFcn',{@closeParticleCollage});
+        collageBG = uibuttongroup(collageFig,'Units','normalized','Position',[0.00, 0.9, 1, 0.1],'SelectionChangedFcn',@collageModeChange);
+        
+        explorePOS_norm = [0.02, 0.6, 0.4, 0.4];
+        selectPOS_norm = [0.02, 0.1, 0.4, 0.4];
+        
+        exploreRadio = uicontrol(collageBG,'Style','radiobutton','String','Explore Particle in Main GUI','Units','normalized','Position',explorePOS_norm,'Tag','explore');
+        selectRadio = uicontrol(collageBG,'Style','radiobutton','String','Select Multiple Particles','Units','normalized','Position',selectPOS_norm,'Tag','select');
+        selectLabelName = uicontrol(collageBG, 'Style','edit','String','Particle Group Name', 'Units','normalized','Position',[0.20, 0.1, 0.2, 0.35]);
+        refreshParticleList = uicontrol(collageBG,'Style','pushbutton','String','Refresh List after Load','Units','normalized','Position',[0.22, 0.54, 0.2, 0.3],'Callback',{@placeParticleGrouping});
+        saveParticleGrouping = uicontrol(collageBG, 'Style','pushbutton','String','Save Particle Group -->','Units','normalized','Position',[0.4, 0.1, 0.2, 0.5],'Callback',{@saveParticleGrouping_callback},'Enable','off');
+        displayAllParticles = uicontrol(collageBG,'Style','pushbutton','String','Display All Particles','Units','normalized','Position',[0.4,0.6,0.2,0.5],'Callback',{@displayAllParticles_callback});
+        particleGroupList = uicontrol('Style','listbox','Units','normalized','Position',[0.65, 0.1, 0.3, 0.9],'Parent',collageBG,'Callback',{@particleGroupList_callback});
+        
+        collagePanel = uipanel(collageFig,'Units','normalized','BorderType','none','Position',[0.00, 0.00, 1, 0.9]);
+        collageAxes = axes(collagePanel);
+        
+        PlotCollage_GUI(DataVectors_GUI);
+        
+        collageImageHandle = findall(collageFig,'Type','image');
+        hdatavectorexport.Enable = 'on';
+        particleGroupList.UserData = 'all';
+        
+        %% >> Plot Collage Image
+        function imHandle = PlotCollage_GUI(DVin)
+            collageImage = ParticleCollage(DVin, 'Ordering', 'ordered');
+            
+            imHandle = imagesc(uint8(collageImage));
+            axis image
+            hold(collageAxes,'on');
+
+            imHandle.UserData = bwlabel(sum(collageImage, 3));
+            imHandle.ButtonDownFcn = @ExploreSelectedParticle;
+            
+            if hasfield(DVin,'particleGroups')
+                placeParticleGrouping();
+            end
+            
+        end
+        
+        
+        %% >> Changing Collage Mode
+        function collageModeChange(source,event)
+            selectedToggle = source.SelectedObject;
+            delete(findall(collageImageHandle.Parent,'Tag','recentSelection'));
+            
+            switch selectedToggle.Tag
+                case 'explore'
+                    collageImageHandle.ButtonDownFcn = @ExploreSelectedParticle;
+                    if ~isempty(findall(source.Parent,'Tag','recentSelection'))
+                        delete(findall(source.Parent,'Tag','recentSelection'));
+                    end
+                case 'select'
+                    collageImageHandle.ButtonDownFcn = @SelectMultipleParticles;
+                    DataVectors_GUI.particleGroups.tempParticleGroup = []; %initialize temporary particle group
+                    saveParticleGrouping.Enable = 'on';
+            end
+        end
+        
+        %% >> Explore Selected Particle
+        function ExploreSelectedParticle(source, event)
+            labelCollage = source.UserData;
+            xyPOS = round(event.IntersectionPoint(1:2));
+            partRow = xyPOS(2);
+            partCol = xyPOS(1);
+            chosenPartIdx = labelCollage(partRow,partCol);
+            
+            if chosenPartIdx > 0
+                if strcmp(particleGroupList.UserData,'all')
+                    chosenPartDir = DataVectors_GUI.partDirList{chosenPartIdx};
+                else
+                    currGroup = particleGroupList.String{particleGroupList.Value};
+                    chosenPartDir = DataVectors_GUI.particleGroups.(currGroup).partDirList{chosenPartIdx};
+                end
+                
+                chosenPartFOVidx = find(contains(DataVectors_GUI.dirlist, chosenPartDir));
+                set(hlistready,'Value',chosenPartFOVidx);
+                hselect_callback();
+                figure(collageFig);
+            end
+            delete(findall(source.Parent,'Tag','recentSelection'));
+            
+            plot(event.IntersectionPoint(1),event.IntersectionPoint(2),'Color','k',...
+                'MarkerSize',15,'Marker','*',...
+                'tag','recentSelection','Parent',source.Parent);
+            
+            plot(event.IntersectionPoint(1),event.IntersectionPoint(2),'wx',...
+                'MarkerSize',15,'tag','recentSelection','Parent',source.Parent);
+            
+        end
+        
+        %% >> Select Multiple Particles
+        function SelectMultipleParticles(source, event)
+            
+            labelCollage = source.UserData;
+            xyPOS = round(event.IntersectionPoint(1:2));
+            partRow = xyPOS(2);
+            partCol = xyPOS(1);
+            chosenPartIdx = labelCollage(partRow,partCol);
+            
+            if chosenPartIdx > 0 & ~any(find(chosenPartIdx == DataVectors_GUI.particleGroups.tempParticleGroup))
+                allSelections = findall(collageImageHandle.Parent,'Tag','recentSelection');    
+                
+                particleGroupName = erase(selectLabelName.String,' '); %making sure there are no spaces
+                
+                plot(event.IntersectionPoint(1),event.IntersectionPoint(2),'Color','k',...
+                    'MarkerSize',15,'Marker','*',...
+                    'tag','recentSelection','Parent',source.Parent);
+                
+                plot(event.IntersectionPoint(1),event.IntersectionPoint(2),'wx',...
+                    'MarkerSize',15,'tag','recentSelection','Parent',source.Parent);
+                
+                DataVectors_GUI.particleGroups.tempParticleGroup = [DataVectors_GUI.particleGroups.tempParticleGroup, chosenPartIdx];
+                
+                figure(collageFig); %refocus to figure
+            end
+        end
+        
+        %% >> Backspace to delete most recent particle
+        function removeLastSelected(source, event)
+            
+            switch event.Key
+                case 'backspace'
+                    allSelections = findall(collageImageHandle.Parent,'Tag','recentSelection');
+                    if ~isempty(allSelections)
+                        delete(allSelections(1:2)); %delete the first two selections since they both refer to one point.  The most recent object is first in the list
+                        DataVectors_GUI.particleGroups.tempParticleGroup(end) = [];
+                    end
+            end
+            
+            
+        end
+        
+        %% >> Save Particle Grouping
+        function saveParticleGrouping_callback(source, event)
+            particleGroupName = erase(selectLabelName.String,' '); %making sure there are no spaces
+            
+            saveAns = 'yes'; %initialize default
+            if hasfield(DataVectors_GUI.particleGroups, particleGroupName)
+                dialogueText = ['Replace Existing Group: ', particleGroupName, ' ?'];
+                saveAns = inputdlg({dialogueText}, 'Confirm Replacement', [1,10],{'yes'});
+            end
+            
+            if strcmpi(saveAns,'yes') & ~isempty(DataVectors_GUI.particleGroups.tempParticleGroup)
+                DataVectors_GUI.particleGroups.(particleGroupName).particleIdx = sort(DataVectors_GUI.particleGroups.tempParticleGroup);
+            end
+            
+            hdatavectorexport_callback();
+            
+            delete(findall(collageImageHandle.Parent,'Tag','recentSelection'));
+            
+            currGroupList = particleGroupList.String;
+            particleGroupList.String = [currGroupList; {particleGroupName}];
+            
+        end
+        
+        %% >> Place Particle Group on list
+        function placeParticleGrouping()
+            
+            if ~hasfield(DataVectors_GUI,'particleGroups')
+                return;
+            end
+            
+            foundCollageFig = findobj('Name','Particle Collage');
+            imHandle = findall(foundCollageFig,'Type','image');
+            delete(findall(imHandle.Parent,'Tag','recentSelection'));
+            particleGroupList.Value = 1;
+            particleGroupList.String = fieldnames(DataVectors_GUI.particleGroups);
+            
+            %particleGroupList_callback();
+            
+        end
+        
+%         %% >> Refresh Particle Group
+%         function refreshParticleList_callback(~,~)
+%             placeParticleGrouping()
+%             
+%         end
+        
+        %% >> Select Particle Group on List
+        function particleGroupList_callback(source, event)
+            groupNames = particleGroupList.String;
+            groupVal = particleGroupList.Value;
+            
+            
+            delete(collageAxes);
+            collageAxes = axes(collagePanel);
+            PlotCollage_GUI(DataVectors_GUI.particleGroups.(groupNames{groupVal}));
+            particleGroupList.UserData = 'group';
+            
+        end
+        
+        %% >> Display All Particles Again
+        function displayAllParticles_callback(~,~)
+            delete(collageAxes);
+            collageAxes = axes(collagePanel);
+            PlotCollage_GUI(DataVectors_GUI);
+            particleGroupList.UserData = 'all';
+            
+        end
+        
+        %% >> close collageGUI fcn
+        function closeParticleCollage(~,~)
+            if hasfield(DataVectors_GUI.particleGroups, 'tempParticleGroup')
+                DataVectors_GUI.particleGroups = rmfield(DataVectors_GUI.particleGroups,'tempParticleGroup');
+            end
+            
+        end
+        
+        
+    end
+
+%% Export DataVectors to workspace
+    function hdatavectorexport_callback(~,~)
+        if hasfield(DataVectors_GUI.particleGroups, 'tempParticleGroup')
+            DataVectors_GUI.particleGroups = rmfield(DataVectors_GUI.particleGroups,'tempParticleGroup');
+        end
+        DataVectors_GUI = SplitDVGroups(DataVectors_GUI);
+        assignin('base','DataVectors', DataVectors_GUI);
+        DataVectors_GUI.particleGroups.tempParticleGroup = [];
+    end
+
+%% Save As Particle Collection
+    function hsaveASparticlecollection_callback(~,~)
+        saveFilter = {'*.mat'};
+        saveTitle = 'Save Particle Collection';
+        saveDefault = 'TempParticleCollection';
+        [newFileName, newFilePath] = uiputfile(saveFilter, saveTitle, saveDefault);
+        
+        if isequal(newFileName,0) || isequal(newFilePath,0)
+            return;
+        end
+        
+        % write file
+        collectionSaveFile = fullfile(newFilePath, newFileName);
+        SaveCollection(collectionSaveFile);
+        hcollectionpath.String = collectionSaveFile;
+        
+        
+    end
+
+%% Save Particle Collection
+    function hsaveparticlecollection_callback(~,~)
+        currSaveFile = hcollectionpath.String;
+        
+        if isfile(currSaveFile) || isfolder(currSaveFile)
+            SaveCollection(currSaveFile);
+        else
+            hsaveASparticlecollection_callback();
+        end
+    end
+    
+    function SaveCollection(saveFile)
+        save(saveFile, 'DataVectors_GUI','Dataset', '-v7.3'); 
+    end
+
+%% Load Particle Collection
+    function hloadparticlecollection_callback(~,~)
+        collectionFile = uipickfiles('REFilter','\.mat');
+        
+        if ~iscell(collectionFile)
+            return;
+        end
+        
+        load(collectionFile{1},'DataVectors_GUI','Dataset');
+        hcollectionpath.String = collectionFile{1};
+        
+        filedirs = DataVectors_GUI.dirlist;
+        numdirs = length(filedirs);
+        [displaydirs, dirtype] = deal(cell(1,numdirs));
+        for i = 1:numdirs %looping through each selected directory
+            [folderpath,foldername,~] = fileparts(filedirs{i}); %only picking the foldernames for brevity
+            [folderpath_up1,foldername_up1,~] = fileparts(folderpath);
+            [~,foldername_up2,~] = fileparts(folderpath_up1);
+			
+			% Different folder connectors for OS types
+			if ispc()
+				tempfiledir = strcat(filedirs{i},'\');
+				fullfolders{i} = [foldername_up2,' \ ',foldername_up1,' \ ',foldername];
+			elseif ismac()
+				tempfiledir = strcat(filedirs{i},'/');
+				fullfolders{i} = [foldername_up2,' / ',foldername_up1,' / ',foldername];
+			end
+			
+			% Determining type of data set
+			dirLabel = StackOrMap(tempfiledir);
+			if strcmp(dirLabel,'map')
+				dirtype{i} = 'map  ';
+			elseif strcmp(dirLabel,'stack')
+				dirtype{i} = 'stack';
+            elseif strcmp(dirLabel, 'file')
+                dirtype{i} = 'file';
+			end
+			
+            displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
+			if isempty(displaydirs{i})
+				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
+			end
+        end
+        
+        set(hlistready,'String',displaydirs);
+        set(hanalyze,'Enable','on');
+        set(hremove,'Enable','on');
+		set(haveragevariable,'Enable','on');
+        hparticlecollage.Enable = 'on';
+        hsaveparticlecollection.Enable = 'on';
+        hsaveASparticlecollection.Enable = 'on';
+        
     end
 
 %% hradiomultiple callback
@@ -1330,8 +1676,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function hselect_callback(~,~)
         routineval = get(hroutinepopup,'Value');
         routinestr = get(hroutinepopup,'String');
-        ODlimitval = get(hODlimitcheck,'Value');
-        
         
         %%%%
         %%%% Determining what to do depending on current routine
@@ -1342,7 +1686,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             %%%% This routine looks at the data processed normally
             %%%%
             case 'Data Viewer'
-                
                 popupimagestr = get(hpopupimages,'String');
                 popupimageval = get(hpopupimages,'Value');
                 readyvalue = get(hlistready,'Value');
@@ -1350,7 +1693,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 radiosingleval = get(hradiosingle,'Value');
                 radiomultipleval = get(hradiomultiple,'Value');
 				currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
-				
 				try
 					currDataInfo = {...
                         ['# Particles: ', num2str(currSnew.NumParticles)],...
@@ -1362,7 +1704,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				end
                 
                 set(hplottitle,'String',Datasetnames{readyvalue});
-                
                 switch popupimagestr{popupimageval}
 					case 'Data Summary'
 						set(helementpanel,'Visible','on');
@@ -1371,14 +1712,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     case 'Prepost Images'
                         set(helementpanel,'Visible','on');
                         set(rawbg,'Visible','off');
-                        
                         hprepost_callback();
-                        
                         
                     case 'Raw Images'
                         set(helementpanel,'Visible','off');
                         set(rawbg,'Visible','on');
-                        
                         currelements= fieldnames(currSnew.elements);
                         
                         %Making only buttons which have elemental data visible
@@ -1792,10 +2130,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         if strcmp(popupstr{popupval},'Data Viewer')
             key = event.Key;
-            if strcmp(key,'leftarrow')% == 30
-                hleft_callback();
-            elseif strcmp(key,'rightarrow') %== 31
-                hright_callback();
+            switch key
+                case 'leftarrow'
+                    hleft_callback();
+                case 'rightarrow'
+                    hright_callback();
+                case 'g' | 't'
+                    hmask_adjust_callback();
             end
         end
     end
@@ -2071,7 +2412,6 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% Data Summary Plots
 	function DataSummary()
-        
         %%% Supressing repeated warnings
         id = 'MATLAB:ui:javacomponent:FunctionToBeRemoved';
         oldState = warning('query', id);
@@ -2120,53 +2460,48 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		panelplots = findobj('Parent',hpanelmultiple);
 		delete(panelplots);
 		
-		set(hpanelmultiple,'Visible','on');
-		set(hpanelsingle,'Visible','off');
-		
-		MatSiz=size(currSnew.LabelMat);
-		Xvalue = currSnew.Xvalue;
-		Yvalue = currSnew.Yvalue;
-		XSiz=Xvalue/MatSiz(1);
-		YSiz=Yvalue/MatSiz(2);
-		xdat=(0:XSiz:Xvalue);
-		ydat=(0:YSiz:Yvalue);
-		
+%         set(hpanelmultiple,'Visible','on');
+%         set(hpanelsingle,'Visible','off');
         
-		subhandle{1} = subplot(2,2,1);
-        set(subhandle{1},'Parent',hpanelmultiple);
-        Plot_CMap(currSnew, subhandle{1}); 
-		
-		subhandle{2} = subplot(2,2,2);
-		imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
-		axis image
-		xlabel('X (\mum)');
-		ylabel('Y (\mum)');
-		colormap('parula');
-		set((subhandle{2}),'Parent',hpanelmultiple);
-		title(totelefield{checkedele(1)});
-		cbar{i} = colorbar;
-		
-		subhandle{3} = subplot(2,2,3);
-        set((subhandle{3}),'Parent',hpanelmultiple);
-		Plot_OVF(currSnew)
-		
-		
-% 		volfracdist = max(currSnew.VolFrac) - min(currSnew.VolFrac);
-% 		%nhistbins = round(volfracdist./0.05);
-% 		histogram(currSnew.VolFrac,[0:0.05:1]);
-% 		xlabel('Org Vol Frac');
-% 		ylabel('Particle #');
-% 		set(subhandle{4},'Parent',hpanelmultiple,'XLim',[0,1]);
-		
-		
-		try    
-			subhandle{4} =  subplot(2,2,4);
-            set(subhandle{4},'Parent',hpanelmultiple);
+        if any(exist('tight_subplot','file'))
+            subhandle = tight_subplot(2,3,[0.08, 0.05], [0.05, 0.05], [0.04,0.01]);
+            set(subhandle, 'Parent',hpanelmultiple);
+        else
+            for subidx = 1:6
+                subhandle(subidx) = subplot(2,3,subidx);
+            end
+        end
+        
+        axes(subhandle(1));
+        imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
+        axis image
+        xlabel('X (\mum)');
+        ylabel('Y (\mum)');
+        colormap(subhandle(1),'parula');
+        title(totelefield{checkedele(1)});
+        colorbar;
+        
+        axes(subhandle(2));
+        Plot_CMap(currSnew);
+        
+        axes(subhandle(3));
+        Plot_OVF(currSnew)
+        
+        axes(subhandle(4));
+        Plot_RawMean(currSnew);
+        
+        axes(subhandle(5));
+        Plot_Binmap(currSnew);
+        
+        try
+            axes(subhandle(6));
             Plot_2DHistOVF(currSnew);
-		catch
-			currSnew.Size
-		end
+        catch
+            currSnew.Size
+        end
 		
+        set(hpanelmultiple,'Visible','on');
+        set(hpanelsingle,'Visible','off');
 		
     end
 
@@ -2386,7 +2721,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         threshfig = figure(...
             'Units','normalized',...
-            'Position',[0.1,0.2,0.7,0.5]);
+            'Position',[0.1,0.2,0.7,0.5],...
+            'KeyPressFcn',{@threshfig_callback});
         
         figpairax = axes(...
             'Units','normalized',...
@@ -2452,7 +2788,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         function plotimshowpair()
             imshowpair(specmean,Snew.binmap,'Parent',figpairax,'method','montage');
-            
+        end
+        
+        function threshfig_callback(~,~)
+            uicontrol(hthreshslide);
         end
         
         function hthreshslide_callback(~,~)
@@ -2815,7 +3154,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	end
 
 
-%% 
+%% Carbon Mixing State Button - -
 	function carbon_mixingstate_callback(~,~)
 		readyval = get(hlistready,'Value');
 		currSnew = Dataset.(Datasetnames{readyval}).Snew;
@@ -3036,7 +3375,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         if Snew.elements.C ~= 1
             return
         end
-        [n, binctrs] = hist3([Snew.Size', Snew.VolFrac] ,[20,20],'CDataMode','auto');
+        
+        edges{1} = linspace(0, max(Snew.Size), 20);
+        edges{2} = linspace(0,1,20);
+        [n, binctrs] = hist3([Snew.Size', Snew.VolFrac] ,'Edges',edges,'CDataMode','auto');
         xbindist = binctrs{1,1}(1,2)-binctrs{1,1}(1,1);
         ybindist = binctrs{1,2}(1,2)-binctrs{1,2}(1,1);
         xbinverts = binctrs{1,1}-xbindist;
@@ -3065,9 +3407,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         axis image
         colorbar
         title('Raw Intensity Stack Mean')
-        colormap gray
-        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+        colormap(gca,gray)
+        xlabel(gca,'X Position (µm)')
+        ylabel(gca,'Y Position (µm)')
+        set(gca,'FontSize',11,'FontWeight','normal');
         
     end
 
@@ -3079,16 +3422,17 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         imagesc(xAxislabel, yAxislabel, Snew.LabelMat);
         colorbar
         if ODLimitVal == 1
-            colormap(graycmap);
+            colormap(gca,graycmap);
             caxis([0,1.6]);
         else
-            colormap(gray);
+            colormap(gca,gray);
         end
         
         axis image
         title('LabelMat');
-        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+        xlabel('X-Position (µm)')
+        ylabel('Y-Position (µm)')
+        set(gca,'FontSize',11,'FontWeight','normal');
         
     end
 
@@ -3097,10 +3441,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         yAxislabel = [0,Snew.Yvalue];
         imagesc(xAxislabel,yAxislabel,Snew.mask);
         colorbar
+        colormap(gca,gray);
         axis image
         title('Izero Region Mask')
-        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+        xlabel('X-Position (µm)')
+        ylabel('Y-Position (µm)')
+        set(gca,'FontSize',11,'FontWeight','normal');
 
     end
 
@@ -3109,10 +3455,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         yAxislabel = [0,Snew.Yvalue];
         imagesc(xAxislabel,yAxislabel,Snew.binmap);
         colorbar
+        colormap(gca,gray);
         axis image
         title('Visualization Binmap');
-        xlabel('X-Position (µm)','FontSize',11,'FontWeight','normal')
-        ylabel('Y-Position (µm)','FontSize',11,'FontWeight','normal')
+        xlabel('X-Position (µm)')
+        ylabel('Y-Position (µm)')
+        set(gca,'FontSize',11,'FontWeight','normal');
     end
 
     function Plot_RawIm(Snew, energy, varargin)
@@ -3161,9 +3509,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% run cleanup code when figure is closed
     function figureclose_callback(~,~)
-        clear('Dataset', 'filedirs', 'Datasetnames');
+        foundCollageFig = findobj('Name','Particle Collage');
+        delete(foundCollageFig);
+        clear('Dataset', 'DataVectors_GUI', 'filedirs', 'Datasetnames');
         clear global
-        delete(f);      
+        delete(f);
 	end
 
 end
