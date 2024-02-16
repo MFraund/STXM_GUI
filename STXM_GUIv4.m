@@ -1372,7 +1372,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		MergingRawSTXMData();
 	end
 
-%% ---------- hanalyze xxx ANALYSIS HERE xxx runs analysis scripts -----------
+%% ------------------------------ hanalyze xxx ANALYSIS HERE xxx runs analysis scripts -------------------------------
 	function hanalyze_callback(~,~)
 		tic
 		readydirs = get(hlistready,'String'); %get directory strings from leftmost (ready) list
@@ -1587,39 +1587,39 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
             end
 			
-            normPartSpec = cell(0);
-            nPart = max(max(Dataset.(currfov).Snew.LabelMat));
-            specmask = Dataset.(currfov).Snew.spectr .* Dataset.(currfov).Snew.binmap;
-            
-            if length(Dataset.(currfov).Snew.eVenergy) > 1 && Dataset.(currfov).Snew.elements.C == 1
-                for p = 1:nPart
-                    
-                    % 		if length(normPartSpec) == 43
-                    % 			text = 1;
-                    % 		end
-                    
-                    currPartMask = zeros(size(Dataset.(currfov).Snew.binmap));
-                    currPartMask(Dataset.(currfov).Snew.LabelMat==p) = 1;
-                    specPartMask = specmask .* currPartMask;
-                    specPartMask(isinf(specPartMask)) = NaN;
-                    for k = 1:size(specPartMask,3)
-                        specPartMask(:,:,k) = medfilt2(specPartMask(:,:,k));
-                    end
-                    
-                    currPartSpec = squeeze(mean(mean(specPartMask,2,'omitnan'),1,'omitnan'));
-                    currPartSpec = currPartSpec - min(currPartSpec); %making sure values are only positive
-                    
-                    currEnergy = Dataset.(currfov).Snew.eVenergy;
-                    
-                    %Will be many copies of the same path, but will preserve particle identification for later
-                    inputds = [currEnergy, currPartSpec];
-                    [~, out2] = norm2poly_MF(6, inputds, 3, [260, 284, 300, 385]);
-                    % 		normPartSpec = [normPartSpec; STXMfit(currEnergy, currPartSpec)];
-                    normPartSpec = [normPartSpec; out2];
-                    
-                end
-            end
-            Dataset.(currfov).Snew.ParticleSpec = normPartSpec;
+%             normPartSpec = cell(0);
+%             nPart = max(max(Dataset.(currfov).Snew.LabelMat));
+%             specmask = Dataset.(currfov).Snew.spectr .* Dataset.(currfov).Snew.binmap;
+%             
+%             if length(Dataset.(currfov).Snew.eVenergy) > 1 && Dataset.(currfov).Snew.elements.C == 1
+%                 for p = 1:nPart
+%                     
+%                     % 		if length(normPartSpec) == 43
+%                     % 			text = 1;
+%                     % 		end
+%                     
+%                     currPartMask = zeros(size(Dataset.(currfov).Snew.binmap));
+%                     currPartMask(Dataset.(currfov).Snew.LabelMat==p) = 1;
+%                     specPartMask = specmask .* currPartMask;
+%                     specPartMask(isinf(specPartMask)) = NaN;
+%                     for k = 1:size(specPartMask,3)
+%                         specPartMask(:,:,k) = medfilt2(specPartMask(:,:,k));
+%                     end
+%                     
+%                     currPartSpec = squeeze(mean(mean(specPartMask,2,'omitnan'),1,'omitnan'));
+%                     currPartSpec = currPartSpec - min(currPartSpec); %making sure values are only positive
+%                     
+%                     currEnergy = Dataset.(currfov).Snew.eVenergy;
+%                     
+%                     %Will be many copies of the same path, but will preserve particle identification for later
+%                     inputds = [currEnergy, currPartSpec];
+%                     [~, out2] = norm2poly_MF(6, inputds, 3, [260, 284, 300, 385]);
+%                     % 		normPartSpec = [normPartSpec; STXMfit(currEnergy, currPartSpec)];
+%                     normPartSpec = [normPartSpec; out2];
+%                     
+%                 end
+%             end
+%             Dataset.(currfov).Snew.ParticleSpec = normPartSpec;
             
 			hwait.Name = ['Analyzing ', num2str(j+1),' of ', num2str(lfiledirs)];
 			disp(j);
