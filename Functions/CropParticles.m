@@ -14,20 +14,13 @@ Snew = in_Snew;
 nParticles = max(max(Snew.LabelMat));
 
 % Preallocation
-[partMask, rawParts, cSpecParts, OVFParts] = deal(cell(nParticles,1));
+[partMask, rawParts, cSpecParts, OVFParts, massParts] = deal(cell(nParticles,1));
 
 %% Input Checking
-if hasfield(Snew, 'RGBCompMap')
-    CarbonMaps_bool = true;
-else
-    CarbonMaps_bool = false;
-end
+CarbonMaps_bool = hasfield(Snew, 'RGBCompMap');
+OVF_bool = hasfield(Snew, 'ThickMap');
+Mass_bool = hasfield(Snew,'MassMap');
 
-if hasfield(Snew, 'ThickMap')
-    OVF_bool = true;
-else
-    OVF_bool = false;
-end
 
 %% Cropping Particle Maps
 % Crops each particle and places in a cell array with 2 pixels worth of padding.
@@ -58,6 +51,14 @@ for p = 1:nParticles
         OVFParts{p} = padarray(tempOVF(cropRows, cropCols),[2,2]);
     end
     
+    %% Cropped Mass Map
+    if Mass_bool
+        totalMassMap = Snew.MassMap.org + Snew.MassMap.inorg + Snew.MassMap.soot;
+        tempMassMap = totalMassMap .* currPartMask;
+        tempMassMap(isnan(tempMassMap)) = 0;
+        massParts{p} = padarray(tempMassMap(cropRows, cropCols), [2,2]);
+    end
+    
 end
 
 %% Defining Outputs
@@ -65,6 +66,7 @@ Snew.CroppedParticles.partMask = partMask;
 Snew.CroppedParticles.rawParts = rawParts;
 Snew.CroppedParticles.cSpecParts = cSpecParts;
 Snew.CroppedParticles.OVFParts = OVFParts;
+Snew.CroppedParticles.massParts = massParts;
 
 out_Snew = Snew;
 
