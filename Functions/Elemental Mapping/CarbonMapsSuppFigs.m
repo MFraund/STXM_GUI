@@ -145,8 +145,8 @@ carbmask=medfilt2(carbmask);
 
 prepost = pre./post;
 errprepost = sqrt((Snew.errOD(:,:,preidx)./post).^2 + ((pre.* Snew.errOD(:,:,postidx)./post.^2)).^2); %calculus based (derivative) error propagation formula applied here
-prepost(isinf(prepost)==1) = 0;
-prepost(isnan(prepost)==1) = 0;
+prepost(isinf(prepost)) = 0;
+prepost(isnan(prepost)) = 0;
 
 noise_pre = std(pre(Snew.mask==1));
 premask = pre;
@@ -174,7 +174,7 @@ prepost(prepost<inorgthresh)=0;
 
 prepostmask=prepost;
 prepostmask = medfilt2(prepost,[3,3]);
-prepostmask(prepost>0)=1;
+prepostmask(prepostmask>0)=1;
 prepostmask = bwareaopen(prepostmask,11, 8); %removing small particles
 prepostmask = prepostmask .* premask;
 %% SP2 Map %%%%%%%%%%%%%%%%%%%%%%%% SP2 Map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
@@ -190,27 +190,28 @@ if ~isempty(sp2idx)
     spmask=doublecarb1.*binmap;
     spmask(spmask>0)=1;                  % make binary sp2 mask
     
-    doublecarb2=(doublecarb1./carb) .* (0.4512/0.8656) .*spmask;
+    doublecarb2=(doublecarb1./carb1) .* (0.4512/0.8656) .*spmask;
     sp2NoThresh=doublecarb2;
     sp2NoThresh(sp2NoThresh<0)=NaN;
     sp2NoThresh(sp2NoThresh>1)=1;
     Snew.sp2=sp2NoThresh;
    
-	rawsp2 =(doublecarb1./carb)  .*  (0.4512/0.8656);
+	rawsp2 =(doublecarb1./carb1)  .*  (0.4512/0.8656);
 	rawsp2(isinf(rawsp2)) = 0;
     rawsp2(isnan(rawsp2)) = 0;
-    sp2=(doublecarb1./carb)  .*  (0.4512/0.8656).*spmask; % calculate %sp2 of masked images
-    errsp2 = (0.4512./0.8656).*sqrt((errdoublecarb./carb).^2 + ((doublecarb.*errcarb./carb.^2).^2));
+    sp2=(doublecarb1./carb1)  .*  (0.4512/0.8656).*spmask; % calculate %sp2 of masked images
+    errsp2 = (0.4512./0.8656).*sqrt((errdoublecarb./carb1).^2 + ((doublecarb.*errcarb./carb1.^2).^2));
     sp2(isinf(sp2)) = 0;
     sp2(isnan(sp2)) = 0;
        
 	sp2(sp2 < 0) = 0;
-	sp2frac = sp2;
+	
     sp2 = removeoutlier_IQRtest(sp2); %removing very large numbers
+    sp2frac = sp2;
     
     sp2noise = std(rawsp2(Snew.mask==1));
     sp2 = sp2 .* binmap;
-    sp2(sp2 < sp2LimitSN.*sp2noise) = 0; %should be < SNLimit
+%     sp2(sp2 < sp2LimitSN.*sp2noise) = 0; %should be < SNLimit
     sp2(sp2<spThresh)=0;                                                     % threshold everythin less than 40% sp2
     
     finSp2mask=sp2;
@@ -342,9 +343,9 @@ end
 xdat=[0:XSiz:Snew.Xvalue];
 ydat=[0:YSiz:Snew.Yvalue];
 
-xysiz=size(carb);
+xysiz=size(carb1);
 Snew.Maps=zeros(xysiz(1),xysiz(2),3);
-Snew.Maps(:,:,1)=carb;
+Snew.Maps(:,:,1)=carb1;
 Snew.Maps(:,:,2)=prepost;
 Snew.Maps(:,:,3)=sp2;
 Snew.sp2frac = sp2frac;
