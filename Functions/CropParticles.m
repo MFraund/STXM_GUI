@@ -36,7 +36,7 @@ for p = 1:nParticles
     
     %% Raw Spectra
     tempRaw = Snew.spectr .* currPartMask;
-    rawParts{p} = padarray(tempRaw(cropRows, cropCols),[2,2]);
+    rawParts{p} = padarray(tempRaw(cropRows, cropCols,:),[2,2,0]);
     
     %% Cropped RGB Carbon Maps
     if CarbonMaps_bool

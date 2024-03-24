@@ -950,7 +950,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         % Preallocation
         [OVFvec, Sizevec, PartLabelVec, CompSizeVec, DiVec, DalphaVec, DgammaVec] = deal([]);
-        [partDirList, croppedOVF, partMask, cSpecParts] = deal(cell(0));
+        [partDirList, croppedOVF, partMask, cSpecParts, rawParts] = deal(cell(0));
         [partEnergy, normPartSpec, normPartOrgSpec, normPartOVFSpec] = deal(cell(0));
         
         lfiledirs = length(filedirs);
@@ -979,6 +979,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             % Cropping
             currSnew = CropParticles(currSnew);
+            rawParts = [rawParts ; currSnew.CroppedParticles.rawParts];
             partMask = [partMask ; currSnew.CroppedParticles.partMask];
             croppedOVF = [croppedOVF ; currSnew.CroppedParticles.OVFParts];
             cSpecParts = [cSpecParts ; currSnew.CroppedParticles.cSpecParts];
@@ -1010,6 +1011,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors_GUI.partMask = partMask;
         DataVectors_GUI.croppedOVF = croppedOVF;
         DataVectors_GUI.cSpecParts = cSpecParts;
+        DataVectors_GUI.rawParts = rawParts;
         
         DataVectors_GUI.DiVec = DiVec;
         DataVectors_GUI.DalphaVec = DalphaVec;
@@ -1038,17 +1040,17 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'KeyPressFcn', {@removeLastSelected},'DeleteFcn',{@closeParticleCollage});
         collageBG = uibuttongroup(collageFig,'Units','normalized','Position',[0.00, 0.9, 1, 0.1],'SelectionChangedFcn',@collageModeChange);
         
-        explorePOS_norm = [0.02, 0.6, 0.4, 0.4];
-        selectPOS_norm = [0.02, 0.1, 0.4, 0.4];
+        explorePOS_norm = [0, 0.6, 0.2, 0.34];
+        selectPOS_norm = [0, 0.1, 0.2, 0.34];
         
         exploreRadio = uicontrol(collageBG,'Style','radiobutton','String','Explore Particle in Main GUI','Units','normalized','Position',explorePOS_norm,'Tag','explore');
         selectRadio = uicontrol(collageBG,'Style','radiobutton','String','Select Multiple Particles','Units','normalized','Position',selectPOS_norm,'Tag','select');
-        selectLabelName = uicontrol(collageBG, 'Style','edit','String','Particle Group Name', 'Units','normalized','Position',[0.20, 0.1, 0.2, 0.35]);
-        refreshParticleList = uicontrol(collageBG,'Style','pushbutton','String','Refresh List','Units','normalized','Position',[0.22, 0.54, 0.2, 0.3],'Callback',{@placeParticleGrouping});
-        saveParticleGrouping = uicontrol(collageBG, 'Style','pushbutton','String','Save Particle Group -->','Units','normalized','Position',[0.4, 0.1, 0.2, 0.5],'Callback',{@saveParticleGrouping_callback},'Enable','off');
-        displayAllParticles = uicontrol(collageBG,'Style','pushbutton','String','Display All Particles','Units','normalized','Position',[0.4,0.6,0.2,0.5],'Callback',{@displayAllParticles_callback});
-        particleGroupList = uicontrol('Style','listbox','Units','normalized','Position',[0.6, 0.1, 0.3, 0.9],'Parent',collageBG,'Callback',{@particleGroupList_callback});
-        collageSampleSize = uicontrol('Style','edit','String','all','Units','normalized','Position',[0.90,0.6,0.04,0.15], 'Parent',collageBG,'Callback',{@particleGroupList_callback});
+        selectLabelName = uicontrol(collageBG, 'Style','edit','String','Particle Group Name', 'Units','normalized','Position',[0.50, 0.19, 0.15, 0.25]);
+        refreshParticleList = uicontrol(collageBG,'Style','pushbutton','String','Refresh List','Units','normalized','Position',[0.2, 0.54, 0.095, 0.4],'Callback',{@placeParticleGrouping});
+        saveParticleGrouping = uicontrol(collageBG, 'Style','pushbutton','String','Save Particle Group -->','Units','normalized','Position',[0.49, 0.49, 0.16, 0.47],'Callback',{@saveParticleGrouping_callback},'Enable','off');
+        displayAllParticles = uicontrol(collageBG,'Style','pushbutton','String','Display All Particles','Units','normalized','Position',[0.3, 0.51, 0.14, 0.44],'Callback',{@displayAllParticles_callback});
+        particleGroupList = uicontrol('Style','listbox','Units','normalized','Position',[0.66, 0.1, 0.3, 0.9],'Parent',collageBG,'Callback',{@particleGroupList_callback});
+        collageSampleSize = uicontrol('Style','edit','String','all','Units','normalized','Position',[0.96, 0.72, 0.04, 0.27], 'Parent',collageBG,'Callback',{@particleGroupList_callback});
         
         collagePanel = uipanel(collageFig,'Units','normalized','BorderType','none','Position',[0.00, 0.00, 1, 0.9]);
         collageAxes = axes(collagePanel);
@@ -1063,63 +1065,23 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         %% >> Hover and plot spectrum
         function hoverPlot(source, event)
             figurePos = get(source,'Position');
-%             figurePos
-%             mousePos = get(source, 'CurrentPoint');
+
             mousePos = get(gca,'CurrentPoint');
             mouseRow = round(mousePos(1,2));
             mouseCol = round(mousePos(1,1));
-%             mouseX
-%             mouseY
+
+            collageImageHandle = findall(collageFig,'Type','image');
             
             labelCollage = collageImageHandle.UserData;
             
-            %             hoverPartIdx = labelCollage(mouseX, mouseY);
-            
-            %             hChildren = get(source,'Children');
-            %
-            %             for k=1:length(hChildren)
-            %                 hUiControl = hChildren(k);
-            
-            % get the child position
-%             uiPanelPos = get(collageImageHandle.Parent.Parent,'Position');
-%             uiAxesPos = get(collageImageHandle.Parent,'Position');
-%             uiAxesAspectRatio = get(collageImageHandle.Parent,'PlotBoxAspectRatio');
-% %             uiPanelPos
-% %             uiAxesPos
-%             uiImagePos = [uiPanelPos(1) + uiAxesPos(1).*uiPanelPos(3),...
-%                 uiPanelPos(2) + uiAxesPos(2).*uiPanelPos(4),...
-%                 uiAxesPos(3).*uiPanelPos(3).*uiAxesAspectRatio(1)./100,...
-%                 uiAxesPos(4).*uiPanelPos(4).*uiAxesAspectRatio(2)./100];
-% %             uiImagePos
-%             uiPanelPos .* uiImagePos
-            
-            % create the x and y lower (L) and upper (U) bounds (we assume that the
-            % GUI is resizeable so the child position array contains proportions
-            % relative to the parent GUI)
-%             uiControlXL  = uiImagePos(1);
-%             uiControlXU  = (uiImagePos(1)+uiImagePos(3));
-%             uiControlYL  = uiImagePos(2);
-%             uiControlYU  = (uiImagePos(2)+uiImagePos(4));
-            
-            % check to see if the mouse is over the control
-%             if mouseX>=uiControlXL && mouseX<=uiControlXU && ...
-%                     mouseY>=uiControlYL && mouseY<=uiControlYU
             if mouseRow >0 && mouseRow <= size(labelCollage,1) && ...
                     mouseCol >0 && mouseCol <= size(labelCollage,2)
-%             if mouseRow == -20000
-                % do something
-%                 partRow = mouseY - figurePos(2) - uiImagePos(2);
-%                 partCol = mouseX - figurePos(1) - uiImagePos(1);
-%                 partRow = round((uiImagePos(4) - mouseY - uiImagePos(2))*size(collageImageHandle.CData,1));
-%                 partCol = round((uiImagePos(3) - mouseX - uiImagePos(1))*size(collageImageHandle.CData,2));
-%                 mouseRow
-%                 mouseCol
                 chosenPartIdx = labelCollage(mouseRow, mouseCol);
 %                 chosenPartIdx
                 if chosenPartIdx > 0
                     
                     if isempty(findobj('Tag','hover'))
-                        hoverOverFig = figure('Tag','hover');
+                        hoverOverFig = figure('Tag','hover','Units','normalized','Position',[0.4, 0.4, 0.4, 0.4]);
                     else
                         return
                     end
@@ -1127,15 +1089,15 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     if strcmp(particleGroupList.UserData,'all')
                         %                         chosenPartDir = DataVectors_GUI.partDirList{chosenPartIdx};
                         plot(DataVectors_GUI.partEnergy{chosenPartIdx}, DataVectors_GUI.normPartOrgSpec{chosenPartIdx})
-%                         title(DataVectors_GUI.partDirList{chosenPartIdx});
                     else
                         currGroup = particleGroupList.String{particleGroupList.Value};
                         %                         chosenPartDir = DataVectors_GUI.particleGroups.(currGroup).partDirList{chosenPartIdx};
                         plot(DataVectors_GUI.particleGroups.(currGroup).partEnergy{chosenPartIdx}, DataVectors_GUI.particleGroups.(currGroup).normPartOrgSpec{chosenPartIdx})
-%                         title(DataVectors_GUI.particleGroups.(currGroup).partDirList{chosenPartIdx});
                     end
+                    cspecfig('Labels',true);
                     xlabel('Energy (eV)');
                     ylabel('Intenisty');
+                    xlim([278, 305]);
                     
                     figure(collageFig);
                     
@@ -1159,6 +1121,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
             imHandle.UserData = bwlabel(sum(collageImage, 3));
             imHandle.ButtonDownFcn = @ExploreSelectedParticle;
+            collageImageHandle = findall(collageFig,'Type','image');
             
             if hasfield(DVin,'particleGroups')
                 placeParticleGrouping();
