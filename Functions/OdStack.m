@@ -33,6 +33,7 @@ function S=OdStack(structin, varargin)
 
 [varargin, autoGamma_bool] = ExtractVararginValue(varargin, 'Auto Gamma', true);
 [varargin, gammaLevel] = ExtractVararginValue(varargin, 'Gamma Level', 2);
+[varargin, strelSize] = ExtractVararginValue(varargin, 'Strel Size', 30);
 [varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
 
 [varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
@@ -69,7 +70,7 @@ grayim=mat2gray(imagebuffer); %% Turn into a greyscale with vals [0 1]
 grayim = abs(1-grayim); % Make sure particles are "bright" regions, close to 1
 
 % Structuring element then tophat filter using SE
-se = strel('disk', 30);
+se = strel('disk', strelSize);
 topim = imtophat(grayim, se);
 
 % Gamma adjust
@@ -161,6 +162,7 @@ LabelMat=bwlabel(binmap,8);
 S.LabelMat = LabelMat;
 S.NumParticles = max(max(LabelMat));
 S.rmPixelSize = rmPixelSize;
+S.strelSize = strelSize;
 S.binmap = binmap;
 S = ParticleSize(S);
 
@@ -218,7 +220,7 @@ else
     % loop over energy range of stack, calculate average vor each energy -> return_spec
     for cnt=1:eVlength
         buffer=stack(:,:,cnt);
-        Izero(cnt,2)=mean(buffer(maskIzero==1));
+        Izero(cnt,2)=mean(buffer(maskIzero~=1));
         stdIzero(cnt,2) = std(buffer(maskIzero==1));
         numIzero = sum(sum(maskIzero));
         errIzero(cnt,2) = 1.96 .* stdIzero(cnt,2) ./ sqrt(numIzero); %1.96 comes from t-distribution with an alpha level of 0.05
