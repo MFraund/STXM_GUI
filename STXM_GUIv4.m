@@ -8,8 +8,12 @@ function STXM_GUIv4
 %uipickfiles (found online)
 
 
-%% create then hide the UI as it is being constructed
-ver = 0.001;
+
+%% Constructing UI
+%================================================================
+%================================================================
+
+%% UiComp > Always Visible
 f = figure(...
     'Visible','off',...
     'Units','normalized',...
@@ -18,16 +22,7 @@ f = figure(...
     'CloseRequestFcn',{@figureclose_callback},...
     'Name','AnalyzingSTXM');
 
-
-
-%% constructing components
-%================================================================
-%================================================================
-
-%%%%
-%% Components Always Visible
-%%%%
-
+%---------------------------
 hremove = uicontrol(...
     'Style','pushbutton',...
     'String','Remove Selected',...
@@ -62,7 +57,7 @@ hroutinepopup = uicontrol(...
     'KeyPressFcn',{@hlistreadykey_callback},...
     'Callback',{@hroutinepopup_callback});
 
-%% Components in Load and Run screen
+%% UiComp > Load & Run
 %%%% 
 %%%%
 
@@ -116,58 +111,67 @@ hdatamerge = uicontrol('Style','pushbutton','String','Merge STXM Data',...
 	'Callback',{@hmerge_callback});
 
 
+%% UIComp > L&R >> GUI Preferences
+startingPanel = uipanel(f,'Units','normalized','Tag','Load','Title','GUI Preferences','Position',[0.31,0.5,0.4, 0.5]);
 
-hassumedinorgpopup = uicontrol('Style','popupmenu', 'Units','normalized','Tag','Load',...
-    'Position',[0.32,0.878,0.1,0.05],...
+hassumedinorgpopup = uicontrol('Style','popupmenu', 'Units','normalized','Tag','Load','Parent',startingPanel,...
+    'Position',[0.02, 0.74, 0.1, 0.05],...
     'Value', 2,...
 	'String',{'NaCl','(NH4)2SO4','NH4NO3','NaNO3','KNO3','Na2SO4','KCl','Fe2O3','CaCO3','ZnO','Pb(NO3)2','Al2Si2O9H4'});
 
-hassumedorgpopup = uicontrol('Style','popupmenu','Units','normalized',...
-	'Position',[0.32,0.8,0.1,0.05],...
+hassumedorgpopup = uicontrol('Style','popupmenu','Units','normalized','Parent',startingPanel,...
+	'Position',[0.02,0.7,0.1,0.05],...
 	'String',{'sucrose','adipic','glucose','oxalic'},...
     'Value',2,...
 	'Tag','Load');
 
-hloadmaps = uicontrol('Style','popupmenu','Units','normalized','Tag','Load',...
-	'Position',[0.32, 0.75',0.1, 0.05],...
+hloadtype = uicontrol('Style','popupmenu','Units','normalized','Tag','Load','Parent',startingPanel,...
+	'Position',[0.02, 0.55, 0.15, 0.05],...
 	'String',{'Load all (default)', 'Only Maps', 'Only Spectra', 'Only Files'});
 
-%%% TODO: Make some kind of saved file that this GUI opens to keep track of
-%%% previously selected directory
 
-
-startingDirPos = [0.32,0.94,0.2,0.02];
-hStartingDir = uicontrol('Style','text', 'Tag','Load', 'Units','normalized',...
-    'String',pwd,...
-    'Position',startingDirPos);
-
-hStartingDir_Label = uicontrol('Style','text','Tag','Load','Units','normalized',...
+hStartingDir_Label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
     'String','Starting Directory',...
-    'Position',startingDirPos + [0, 0.02, 0, 0]);
+    'Position',[0.005, 0.94, 0.5, 0.05]);
 
-hDefault_DirSwitch = uicontrol('Style','pushbutton','Units','normalized',...
-    'Tag','Load','String','Switch to Default Directory',...
-    'Position',[0.32, 0.7,0.1, 0.05],...
-    'Callback',{@hDefault_DirSwitch_callback}); 
+hStartingDir = uicontrol('Style','edit', 'Tag','Load', 'Units','normalized','Parent',startingPanel,...
+    'String',pwd,...
+    'Position',[0.005,0.89,0.5,0.05]);
 
-hACEENA_DirSwitch = uicontrol('Style','pushbutton','Units','normalized',...
-    'Tag','Load','String','Switch to ACEENA Directory',...
-    'Position',[0.32, 0.65,0.1, 0.05],...
-    'Callback',{@hACEENA_DirSwitch_callback});
+hStartingDirBrowseButton = uicontrol('Style','pushbutton','Units','normalized','Parent',startingPanel,...
+    'Tag','Load','String','Set Starting Dir','Position',[0.53, 0.89, 0.1, 0.05],...
+    'Callback',{@hStartingDirBroseButton_callback});
 
-hSP2Thresh_label = uicontrol('Style','text','Tag','Load','Units','normalized',...
-    'String','Setting sp2 Threshold (0.35 default)','Position',[0.45, 0.72, 0.1, 0.05]);
+hSave_Preferences = uicontrol('Style','pushbutton','Units','normalized','Parent',startingPanel,...
+    'Tag','Load','String','Save Current UI Preferences',...
+    'Position',[0.8, 0.01,0.2, 0.1],...
+    'Callback',{@SaveGuiPreferences_callback}); 
 
-hSP2Thresh_edit = uicontrol('style','edit','Units','normalized',...
+% hACEENA_DirSwitch = uicontrol('Style','pushbutton','Units','normalized','Parent',startingPanel,...
+%     'Tag','Load','String','Switch to ACEENA Directory',...
+%     'Position',[0.003, 0.006,0.2, 0.1],...
+%     'Callback',{@hACEENA_DirSwitch_callback});
+
+hSP2Thresh_label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
+    'String','Setting sp2 Threshold (0.35 default)','Position',[0.3, 0.75, 0.1, 0.05]);
+
+hSP2Thresh_edit = uicontrol('style','edit','Units','normalized','Parent',startingPanel,...
     'Tag','Load','String','0.35',...
-    'Position',[0.45, 0.7, 0.1, 0.05]);
+    'Position',[0.3, 0.7, 0.1, 0.05]);
+
+hDataSummaryPrepostPlotSelection_label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
+    'Position',[0.02, 0.4, 0.15, 0.05],...
+    'String','PrePost Image to Display in Data Summary');
+
+hDataSummaryPrepostPlotSelection = uicontrol('Style','popupmenu','Tag','Load','Units','normalized','Parent',startingPanel,...
+    'Position',[0.02, 0.3, 0.15, 0.05],...
+    'Value',1,...
+    'String',{'C','S','K','Ca','N','O'});
 
 
-%% Data Viewer Components
-%%%% 
-%%%%
+%% UiComp > Data Viewer
 
-%% >> Particle Collections
+%% UiComp > DV >> Particle Collections
 haveragevariable = uicontrol(...
 	'Style','pushbutton',...
 	'String','Average Variable',...
@@ -201,7 +205,7 @@ hsaveASparticlecollection = uicontrol('Style','pushbutton','String','Save As Par
 hcollectionpath = uicontrol('Style','text','String',' No Collection Loaded',...
     'Units','normalized','Tag','DataViewer','Position',[0.01, 0.02, 0.3, 0.01]);
 
-%% >> Button Groups for Raw Images
+%% UiComp > DV >> Button Groups for Raw Images
 rawbg = uibuttongroup (...
     'Units','normalized',...
     'Visible','off',...
@@ -258,7 +262,7 @@ hOxygenrad = uicontrol(...
     'Tag','DataViewer',...
     'Position',[0.65,0.2,0.3,0.2]);
 
-%% >> Elemental Panel
+%% UiComp > DV >> Elemental Panel
 heleradlist = cell(6,1);
 heleradlist{1} = hSulfurrad;
 heleradlist{2} = hCarbonrad;
@@ -344,7 +348,7 @@ heleboxlist{4} = hCalciumbox;
 heleboxlist{5} = hNitrogenbox;
 heleboxlist{6} = hOxygenbox;
 
-%% >> Single/Multiple View Panel
+%% UiComp > DV >> Single/Multiple View Panel
 radiosinglePOS = [0.53,0.94,0.1,0.04];
 
 hradiosingle = uicontrol(...
@@ -436,7 +440,7 @@ hdatainfo = uicontrol(...
 	'String',currDataInfo);
 
 
-%% >> DV Button Components
+%% UiComp > DV >> DV Button Components
 hstacklabbutton = uicontrol(...
     'Style','pushbutton',...
     'String','Run StackLab on Selected',...
@@ -661,6 +665,8 @@ hbinmap_adjust = uicontrol(...
     'Tag','DataViewer',...
     'Callback',{@hbinmap_adjust_callback});
 
+%% Load Saved UI Preferences
+LoadGuiPreferences();
 
 %% bad globals
 global imageselectionvalue;
@@ -740,8 +746,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			end
 		end
 		
-		loadstr = get(hloadmaps, 'String');
-		loadval = get(hloadmaps, 'Value');
+		loadstr = get(hloadtype, 'String');
+		loadval = get(hloadtype, 'Value');
 		loadtype = loadstr{loadval};
 		
 		if contains(loadtype, 'maps', 'IgnoreCase', true)
@@ -812,8 +818,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			
         end	
 		
-		loadstr = get(hloadmaps, 'String');
-		loadval = get(hloadmaps, 'Value');
+		loadstr = get(hloadtype, 'String');
+		loadval = get(hloadtype, 'Value');
 		loadtype = loadstr{loadval};
 		if contains(loadtype, 'maps', 'IgnoreCase', true)
 			removelist_boolvec = contains(dirtype, 'stack');
@@ -2493,6 +2499,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		readyvalue = get(hlistready,'Value');
 		currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 		currelements= fieldnames(currSnew.elements);
+        
+        eleToDisplay_List = get(hDataSummaryPrepostPlotSelection,'String');
+        eleToDisplay_Val = get(hDataSummaryPrepostPlotSelection,'Value');
+        eleToDisplay = eleToDisplay_List{eleToDisplay_Val};
 		
 		%Making only boxes which have elemental data visible
 		for i = 1:length(heleboxlist)
@@ -2544,27 +2554,38 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             end
         end
         
+        % Axes 1
         axes(subhandle(1));
-        imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
-        axis image
-        xlabel('X (\mum)');
-        ylabel('Y (\mum)');
-        colormap(subhandle(1),'parula');
-        title(totelefield{checkedele(1)});
-        colorbar;
+        if currSnew.elements.(eleToDisplay) == 1
+            Plot_ElePrepost(currSnew,'Element',eleToDisplay);
+        else
+            Plot_ElePrepost(currSnew, 'Element','C');
+        end
+%         imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
+%         axis image
+%         xlabel('X (\mum)');
+%         ylabel('Y (\mum)');
+%         colormap(subhandle(1),'parula');
+%         title(totelefield{checkedele(1)});
+%         colorbar;
         
+        % Axes 2
         axes(subhandle(2));
         Plot_CMap(currSnew);
         
+        % Axes 3
         axes(subhandle(3));
         Plot_OVF(currSnew)
         
+        % Axes 4
         axes(subhandle(4));
         Plot_RawMean(currSnew);
         
+        % Axes 5
         axes(subhandle(5));
         Plot_Binmap(currSnew);
         
+        % Axes 6
         try
             axes(subhandle(6));
             Plot_2DHistOVF(currSnew);
@@ -3399,6 +3420,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         [varargin, axes_handle] = ExtractVararginValue(varargin, 'Axes Handle', gca);
         
         if Snew.elements.C ~= 1
+            disp(['no C found for', Snew.particle]);
             return
         end
         
@@ -3426,6 +3448,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function Plot_carb(Snew, varargin)
         if Snew.elements.C ~= 1
             return
+            disp(['no C found for', Snew.particle]);
         end
         
         imagesc([0, Snew.Xvalue],[0,Snew.Yvalue],Snew.Maps(:,:,1));
@@ -3452,6 +3475,23 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         ylabel('Y (\mum)');
         title('PreEdge/PostEdge');
         
+    end
+
+    function Plot_ElePrepost(Snew, varargin)
+        [varargin, elementSymbol] = ExtractVararginValue(varargin,'Element','C');
+        eleFieldName = ['Tot', elementSymbol];
+        try
+            imagesc([0,Snew.Xvalue],[0,Snew.Yvalue],Snew.(eleFieldName));
+        catch
+            eleFieldName = ['tot', elementSymbol];
+            imagesc([0,Snew.Xvalue],[0,Snew.Yvalue],Snew.(eleFieldName));
+        end
+        axis image
+        xlabel('X (\mum)');
+        ylabel('Y (\mum)');
+        colormap('parula');
+        title(eleFieldName);
+        colorbar;
     end
     
     function Plot_sp2(Snew, varargin)
@@ -3596,30 +3636,111 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     end
 
 
-%% Setting Starting Directories
-    % Default
-    function hDefault_DirSwitch_callback(~,~)
-        set(hStartingDir, 'String',pwd);
+%% Save and Load GUI Preferences
+    function LoadGuiPreferences()
+        guiPath_open = mfilename('fullpath');
+        
+        guiFolder_open = fileparts(guiPath_open);
+        loadOptionsFilePath = fullfile(guiFolder_open, 'guiOptions.mat');
+        
+        if isfile(loadOptionsFilePath)
+            load(loadOptionsFilePath,'guiOptions');
+            set(hStartingDir,'String',guiOptions.startingDir);
+            
+            inorgList_open = get(hassumedinorgpopup,'String');
+            orgList_open = get(hassumedorgpopup,'String');
+            loadType_open = get(hloadtype,'String');
+            loadTotEle_open = get(hDataSummaryPrepostPlotSelection,'String');
+            
+            try
+                loadedInorgListVal = find(strcmp(inorgList_open, guiOptions.assumedInorg));
+            catch
+                guiOptions.assumedInorg = '(NH4)2SO4';
+                loadedInorgListVal = find(strcmp(inorgList_open, guiOptions.assumedInorg));
+            end
+            
+            try
+                loadedOrgListVal = find(strcmp(orgList_open, guiOptions.assumedOrg));
+            catch
+                guiOptions.assumedOrg = 'adipic';
+                loadedOrgListVal = find(strcmp(orgList_open, guiOptions.assumedOrg));
+            end
+            
+            try
+                loadedLoadType_open = find(strcmp(loadType_open, guiOptions.loadType));
+            catch
+                guiOptions.loadType = 'Load all (default)';
+                loadedLoadType_open = find(strcmp(loadType_open, guiOptions.loadType));
+            end
+            
+            try
+                loadedTotEleDisplayVal = find(strcmp(loadTotEle_open, guiOptions.totEleDisplay));
+            catch
+                guiOptions.totEleDisplay = 'C';
+                loadedTotEleDisplayVal = find(strcmp(loadTotEle_open, guiOptions.totEleDisplay));
+            end
+            
+            set(hassumedinorgpopup,'Value',loadedInorgListVal);
+            set(hassumedorgpopup,'Value',loadedOrgListVal);
+            set(hloadtype,'Value',loadedLoadType_open);
+            set(hDataSummaryPrepostPlotSelection,'Value',loadedTotEleDisplayVal); 
+        end
+        
     end
 
-    % ACE ENA Data
+    function SaveGuiPreferences_callback(~,~)
+        guiPath_close = mfilename('fullpath');
+        
+        guiFolder_close = fileparts(guiPath_close);
+        
+        startingDir = get(hStartingDir,'String');
+        inorgList = get(hassumedinorgpopup,'String');
+        inorgVal = get(hassumedinorgpopup,'Value');
+        assumedInorg = inorgList{inorgVal};
+        orgList = get(hassumedorgpopup,'String');
+        orgVal = get(hassumedorgpopup,'Value');
+        assumedOrg = orgList{orgVal};
+        loadTypeList = get(hloadtype,'String');
+        loadTypeVal = get(hloadtype,'Value');
+        loadType = loadTypeList{loadTypeVal};
+        
+        dataSummaryTotEleDisplayList = get(hDataSummaryPrepostPlotSelection,'String');
+        dataSummaryTotEleDisplayVal = get(hDataSummaryPrepostPlotSelection,'Value');
+        totEleDisplay = dataSummaryTotEleDisplayList{dataSummaryTotEleDisplayVal};
+        
+        guiOptions.startingDir = startingDir;
+        guiOptions.assumedOrg = assumedOrg;
+        guiOptions.assumedInorg = assumedInorg;
+        guiOptions.loadType = loadType;
+        guiOptions.totEleDisplay = totEleDisplay;
+        
+        saveOptionsFilePath = fullfile(guiFolder_close, 'guioptions.mat');
+        save(saveOptionsFilePath,'guiOptions','-v7.3')
+    end
+
+    function hStartingDirBroseButton_callback(~,~)
+        selectedDir = uigetdir(pwd,'Select Starting Directory');
+        hStartingDir.String = selectedDir;
+    end
+
+% ACE ENA Data
     function hACEENA_DirSwitch_callback(~,~)
-       if isfolder('Z:\Google Drive\Projects\ACE-ENA\Data')
-           set(hStartingDir, 'String', 'Z:\Google Drive\Projects\ACE-ENA\Data');
-       else
-           disp('<Z:\Google Drive\Projects\ACE-ENA\Data> does not exist');
-       end
+        if isfolder('Z:\Google Drive\Projects\ACE-ENA\Data')
+            set(hStartingDir, 'String', 'Z:\Google Drive\Projects\ACE-ENA\Data');
+        else
+            disp('<Z:\Google Drive\Projects\ACE-ENA\Data> does not exist');
+        end
         
     end
 
     
-%% UI Cleaner ????????
-	function UI_Cleaner()
-		
-	end
-
 %% run cleanup code when figure is closed
     function figureclose_callback(~,~)
+        
+        
+        
+        
+        
         foundCollageFig = findobj('Name','Particle Collage');
         delete(foundCollageFig);
         clear('Dataset', 'DataVectors_GUI', 'filedirs', 'Datasetnames');
@@ -3628,3 +3749,25 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 	end
 
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
