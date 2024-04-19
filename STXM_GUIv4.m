@@ -390,7 +390,7 @@ hODlimitcheck = uicontrol(...
     'Position',ODlimitcheckPOS,...
     'Callback',{@hselect_callback});
 
-hCMapSilhouetteCheck = uicontrol('Style','checkbox','Value',0,'Visible','off','Units','normalized','String','C Maps Silhouette',...
+hCMapSilhouetteCheck = uicontrol('Style','checkbox','Value',0,'Visible','off','Units','normalized','String','Silhouettes and Outlines',...
     'Tag','DataViewer',...
     'Position',[0.41,0.96,0.1,0.04],...
     'Callback',{@hselect_callback});
@@ -3492,6 +3492,19 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         colormap('parula');
         title(eleFieldName);
         colorbar;
+        
+        xvec = linspace(0, Snew.Xvalue, size(Snew.ThickMap,2));
+        yvec = linspace(0, Snew.Yvalue, size(Snew.ThickMap,1));
+        CMapSilhouetteCheck = get(hCMapSilhouetteCheck,'Value');
+        if CMapSilhouetteCheck == 1
+            boundaries = bwboundaries(Snew.binmap,'noholes');
+            hold on;
+            for k = 1:length(boundaries)
+                boundary = boundaries{k};
+                plot(xvec(boundary(:,2)),yvec(boundary(:,1)),'Color','w','LineWidth',0.5);
+            end
+            hold off;
+        end
     end
     
     function Plot_sp2(Snew, varargin)
@@ -3509,7 +3522,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         title('%sp^{2} Map')
     end
 
-    function Plot_OVF(Snew, varargin)
+    function Plot_OVF(Snew, varargin)        
         if Snew.elements.C ~= 1
             return
         end
@@ -3520,6 +3533,20 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		colormap(gca,parula);
 		title('Organic Vol Frac');
 		colorbar;
+        
+        xvec = linspace(0, Snew.Xvalue, size(Snew.ThickMap,2));
+        yvec = linspace(0, Snew.Yvalue, size(Snew.ThickMap,1));
+        CMapSilhouetteCheck = get(hCMapSilhouetteCheck,'Value');
+        if CMapSilhouetteCheck == 1
+            boundaries = bwboundaries(Snew.binmap,'noholes');
+            hold on;
+            for k = 1:length(boundaries)
+                boundary = boundaries{k};
+                plot(xvec(boundary(:,2)),yvec(boundary(:,1)),'Color','w','LineWidth',0.5);
+            end
+            hold off;
+        end
+        
     end
 
     function Plot_2DHistOVF(Snew, varargin)
