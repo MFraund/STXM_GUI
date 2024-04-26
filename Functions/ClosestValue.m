@@ -38,6 +38,7 @@ function [closestVal, closestIdx, valFound_bool] = ClosestValue(vector, value, b
 
 %% Extracting inputs
 [varargin,errMsg] = ExtractVararginValue(varargin,'Error Message','Out of Bounds');
+[varargin, verbose_bool] = ExtractVararginValue(varargin, 'Display Errors', true);
 
 %% Input Checking
 % Dealing with absent boundary conditions
@@ -91,8 +92,12 @@ closestVal = vector(closestIdx);
 if closestVal < lowerBound | closestVal > upperBound
 	closestVal = NaN;
 	closestIdx = NaN;
-	disp(errMsg);
     valFound_bool = false;
+    
+    if verbose_bool
+        disp(errMsg);
+    else
+    end
 else
     valFound_bool = true;
 end

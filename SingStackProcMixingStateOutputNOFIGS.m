@@ -127,7 +127,15 @@ Snew = OdStack(S,...
     );
 
 %% Elemental Maps (CarbonMaps)
-Snew = energytest(Snew);
+
+Snew = ElementPrePostMaps(Snew, 'Element', 'C');
+Snew = ElementPrePostMaps(Snew, 'Element', 'Ca');
+Snew = ElementPrePostMaps(Snew, 'Element', 'K');
+Snew = ElementPrePostMaps(Snew, 'Element', 'S');
+Snew = ElementPrePostMaps(Snew, 'Element', 'N');
+Snew = ElementPrePostMaps(Snew, 'Element', 'O');
+
+% Snew = energytest(Snew);
 
 %this is only used if a FOV is analyzed but DOESNT have carbon data (rare
 %for us).  If carbon data is present, this is overwritten
@@ -145,7 +153,6 @@ if Snew.elements.C == 1
         );
     %savedbinmap = givenBinMap; % Currently Unused
     
-    
     Snew = DirLabelOrgVolFrac(Snew,inorganic,organic);
     %     [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
     Snew = CropParticles(Snew);
@@ -158,25 +165,25 @@ else
 	disp([datafolder,' HAS NO CARBON DATA']);
 end
 
-if Snew.elements.S == 1
-    Snew = SulfurMaps(Snew);
-end
-
-if Snew.elements.K == 1
-    Snew = PotassiumMaps(Snew);
-end
-
-if Snew.elements.Ca == 1
-    Snew = CalciumMaps(Snew);
-end
-
-if Snew.elements.N == 1
-    Snew = NitrogenMaps(Snew);
-end
-
-if Snew.elements.O == 1
-    Snew = OxygenMaps(Snew);
-end
+% if Snew.elements.S == 1
+%     Snew = SulfurMaps(Snew);
+% end
+% 
+% if Snew.elements.K == 1
+%     Snew = PotassiumMaps(Snew);
+% end
+% 
+% if Snew.elements.Ca == 1
+%     Snew = CalciumMaps(Snew);
+% end
+% 
+% if Snew.elements.N == 1
+%     Snew = NitrogenMaps(Snew);
+% end
+% 
+% if Snew.elements.O == 1
+%     Snew = OxygenMaps(Snew);
+% end
 
 if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
     Snew = CNOeleMaps(Snew);
