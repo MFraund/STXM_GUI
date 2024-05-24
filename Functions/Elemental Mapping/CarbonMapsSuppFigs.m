@@ -127,6 +127,10 @@ carb1(carb1<thresh) = 0;
 carb1=carb1.*binmap;
 carb1 = imgaussfilt(carb1);
 Snew.TotC=carb1;
+
+% Per-particle TCA
+Snew = CalcTCA(Snew); % adds Snew.TCA
+
 carbmask=carb1;
 carbmask(carbmask>0)=1;
 carbmask = bwareaopen(carbmask,3, 8);
@@ -299,6 +303,7 @@ CompSize=zeros(NumPart,length(LabelStr)+1);
 PartLabel={};
 for i=1:NumPart  %% Loop over particles defined in Diffmaps.m
     PartLabel{i}='';
+    linidx1 = 0;
     for j=1:length(LabelStr)  %% Loop over chemical components
         [a1,b1]=find(LabelMat==i);  %% get particle i
         [a2,b2]=find(BinCompMap{j}>0); %% get component j
