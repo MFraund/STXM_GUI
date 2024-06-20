@@ -129,6 +129,14 @@ hloadtype = uicontrol('Style','popupmenu','Units','normalized','Tag','Load','Par
 	'Position',[0.02, 0.55, 0.15, 0.05],...
 	'String',{'Load all (default)', 'Only Maps', 'Only Spectra', 'Only Files'});
 
+hpickelementtype_label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
+    'String','Element Type Must be Present',...
+    'Position',[0.20, 0.60, 0.15, 0.05]);
+
+hpickelementtype = uicontrol('Style','edit','Units','normalized','Tag','Load','Parent',startingPanel,...
+	'Position',[0.20, 0.55, 0.15, 0.05],...
+	'String','C');
+
 
 hStartingDir_Label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
     'String','Starting Directory',...
@@ -158,6 +166,13 @@ hSP2Thresh_label = uicontrol('Style','text','Tag','Load','Units','normalized','P
 hSP2Thresh_edit = uicontrol('style','edit','Units','normalized','Parent',startingPanel,...
     'Tag','Load','String','0.35',...
     'Position',[0.3, 0.7, 0.1, 0.05]);
+
+hInorgThresh_label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
+    'String','Setting pre/post Inorg Threshold (0.5 default)','Position',[0.40, 0.75, 0.1, 0.05]);
+
+hInorgThresh_edit = uicontrol('style','edit','Units','normalized','Parent',startingPanel,...
+    'Tag','Load','String','0.5',...
+    'Position',[0.40, 0.7, 0.1, 0.05]);
 
 hDataSummaryPrepostPlotSelection_label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
     'Position',[0.02, 0.4, 0.15, 0.05],...
@@ -486,7 +501,7 @@ hSelectSpectra = uicontrol(...
 	'Tag','SpectraViewer',...
 	'Callback',{@hSelectSpectra_callback});
 
-titlepos = [0.54,0.84,0.25,0.02];
+titlepos = [0.54,0.85,0.25,0.01];
 
 
 hleft = uicontrol(...
@@ -644,7 +659,7 @@ hremoveenergy = uicontrol(...
     'Units','normalized',...
     'Position',[0.68,0.01,0.1,0.053],...
     'Tag','DataViewer',...
-    'Enable','on',...
+    'Enable','off',...
     'Callback',{@hremoveenergy_callback});
 
 hmask_adjust = uicontrol(...
@@ -690,7 +705,7 @@ movegui(f,'north');
 
 %making a colormap that will highlight the highest color in red (useful for
 %when OD goes over the linear range
-graycmap = colormap('gray');
+graycmap = colormap(flipud(gray));
 graycmap = [graycmap; 0.9,0.3,0.3];
 
 %////////////////////////////////////////////////////////////////////
@@ -709,7 +724,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		if isempty(filedirs)
 			disp('Must pick some files');
 		end
-        %global numdirs
+        
+        elementPick = get(hpickelementtype, 'String');
+        removelist_ele = [];
+        
         numdirs = length(filedirs);
         folders = cell(1,numdirs); %preallocating folders cell array
         dirtype = cell(1,numdirs); %preallocating
@@ -738,14 +756,24 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				dirtype{i} = 'stack';
             elseif strcmp(dirLabel, 'file')
                 dirtype{i} = 'file';
-			end
+            end
 			
+            % Determining elemental edge for each data set
+            eleStructOut = ElementEdgeCheck(tempfiledir);
+            if eleStructOut.elements.(elementPick) == 0 %If chosen element isn't present
+                removelist_ele = [removelist_ele; i];
+            end
+            
             displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
 			if isempty(displaydirs{i})
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
 			end
-		end
+        end
 		
+        displaydirs(removelist_ele) = [];
+        filedirs(removelist_ele) = [];
+        dirtype(removelist_ele) = [];
+        
 		loadstr = get(hloadtype, 'String');
 		loadval = get(hloadtype, 'Value');
 		loadtype = loadstr{loadval};
@@ -775,6 +803,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		startDir = uipickfiles('FilterSpec',startingDir,...
 			'REFilter','\.removefilesfromlist$',...
 			'Prompt','Select Starting Directory For Recursive Data Scraping');
+        
+        if ~iscell(startDir)
+            return
+        end
 		
 		for sDirIdx = 1:length(startDir)
 			dataDirs = recursive_load(startDir{sDirIdx});
@@ -782,8 +814,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			dataDirs_cleaned = dataDirs_unpacked(~cellfun(@isempty, dataDirs_unpacked));
 			filedirs = cat(1, filedirs, dataDirs_cleaned);
 			
-		end
+        end
 		
+        elementPick = get(hpickelementtype, 'String');
+        removelist_ele = [];
+        
 		numdirs = length(filedirs);
 		folders = cell(1,numdirs); %preallocating folders cell array
 		dirtype = cell(1,numdirs); %preallocating
@@ -810,14 +845,24 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 				dirtype{i} = 'map  ';
 			elseif strcmp(dirLabel,'stack')
 				dirtype{i} = 'stack';
-			end
+            end
 			
+            % Determining elemental edge for each data set
+            eleStructOut = ElementEdgeCheck(tempfiledir);
+            if eleStructOut.elements.(elementPick) == 0 %If chosen element isn't present
+                removelist_ele = [removelist_ele; i];
+            end
+            
 			displaydirs{i} = [dirtype{i},' ',fullfolders{i}];
 			if isempty(displaydirs{i})
 				displaydirs{i} = [displaydirs{i}, 'EMPTY'];
 			end
 			
         end	
+        
+        displaydirs(removelist_ele) = [];
+        filedirs(removelist_ele) = [];
+        dirtype(removelist_ele) = [];
 		
 		loadstr = get(hloadtype, 'String');
 		loadval = get(hloadtype, 'Value');
@@ -1474,6 +1519,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		threshMethod_val = get(hthresholding_dropdown,'Value');
 		threshMethod = threshMethod_str{threshMethod_val};
         SP2Thresh = str2num(get(hSP2Thresh_edit,'String'));
+        inorgThresh = str2num(get(hInorgThresh_edit,'String'));
         
 		
 		loadobj = findobj('Tag','Load');
@@ -1648,6 +1694,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     'Thresh Method',threshMethod,...
                     'Gamma Level', threshlevel,...
                     'sp2 Threshold', SP2Thresh,...
+                    'Inorganic Threshold', inorgThresh,...
                     'Remove Pixel Size', 7,...
                     'Carbon SN Limit', 3,...
                     'SP2 SN Limit', 3,...
@@ -2513,6 +2560,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
 		currelements= fieldnames(currSnew.elements);
         
+        radiomultipleval = get(hradiomultiple,'Value');
+        radiosingleval = get(hradiosingle,'Value');
+        
         eleToDisplay_List = get(hDataSummaryPrepostPlotSelection,'String');
         eleToDisplay_Val = get(hDataSummaryPrepostPlotSelection,'Value');
         eleToDisplay = eleToDisplay_List{eleToDisplay_Val};
@@ -2554,67 +2604,88 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		elenum = Sval + Cval + Kval + Caval + Nval + Oval;
 		checkedele = find(eleflagvec == 1);
 		
-		panelplots = findobj('Parent',hpanelmultiple);
-		delete(panelplots);
-		
-%         set(hpanelmultiple,'Visible','on');
-%         set(hpanelsingle,'Visible','off');
-        
-        if any(exist('tight_subplot','file'))
-            subhandle = tight_subplot(2,3,[0.08, 0.05], [0.05, 0.05], [0.04,0.01]);
-            set(subhandle, 'Parent',hpanelmultiple);
-        else
-            for subidx = 1:6
-                subhandle(subidx) = subplot(2,3,subidx);
+        if radiomultipleval == 1
+            panelplots = findobj('Parent',hpanelmultiple);
+            delete(panelplots);
+            
+            if any(exist('tight_subplot','file'))
+                subhandle = tight_subplot(2,3,[0.08, 0.05], [0.05, 0.05], [0.04,0.01]);
+                set(subhandle, 'Parent',hpanelmultiple);
+            else
+                for subidx = 1:6
+                    subhandle(subidx) = subplot(2,3,subidx);
+                end
             end
+            
+            % Axes 1
+            axes(subhandle(1));
+            if currSnew.elements.(eleToDisplay) == 1
+                Plot_ElePrepost(currSnew,'Element',eleToDisplay);
+            else
+                Plot_ElePrepost(currSnew, 'Element',nonzeroele);
+            end
+            
+            % Axes 2
+            axes(subhandle(2));
+            if currSnew.elements.C
+                Plot_CMap(currSnew);
+            end
+            
+            % Axes 3
+            axes(subhandle(3));
+            if currSnew.elements.C
+                Plot_OVF(currSnew)
+            end
+            
+            % Axes 4
+            axes(subhandle(4));
+            Plot_RawMean(currSnew);
+            
+            % Axes 5
+            axes(subhandle(5));
+            Plot_Binmap(currSnew);
+            
+            % Axes 6
+            try
+                axes(subhandle(6));
+                Plot_2DHistOVF(currSnew);
+            catch
+                currSnew.Size
+            end
+            
+            set(hpanelmultiple,'Visible','on');
+            set(hpanelsingle,'Visible','off');
+        elseif radiosingleval == 1
+            panelplots = findobj('Parent',hpanelsingle);
+            delete(panelplots);
+            
+            axes('Units','normalized',...
+                'Position',[0.07,0.06,0.9,0.9],...
+                'Parent',hpanelsingle,'Tag','haxes',...
+                'HandleVisibility','on');
+            switch imageselectionvalue
+                case 1
+                    if currSnew.elements.(eleToDisplay) == 1
+                        Plot_ElePrepost(currSnew,'Element',eleToDisplay);
+                    else
+                        Plot_ElePrepost(currSnew, 'Element',nonzeroele);
+                    end
+                case 2
+                    if currSnew.elements.C
+                        Plot_CMap(currSnew);
+                    end
+                case 3
+                    if currSnew.elements.C
+                        Plot_OVF(currSnew)
+                    end
+                case 4
+                    Plot_RawMean(currSnew);
+            end
+            
+            
+            set(hpanelmultiple,'Visible','off');
+            set(hpanelsingle,'Visible','on');
         end
-        
-        % Axes 1
-        axes(subhandle(1));
-        if currSnew.elements.(eleToDisplay) == 1
-            Plot_ElePrepost(currSnew,'Element',eleToDisplay);
-        else
-            Plot_ElePrepost(currSnew, 'Element',nonzeroele);
-        end
-%         imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
-%         axis image
-%         xlabel('X (\mum)');
-%         ylabel('Y (\mum)');
-%         colormap(subhandle(1),'parula');
-%         title(totelefield{checkedele(1)});
-%         colorbar;
-        
-        % Axes 2
-        axes(subhandle(2));
-        if currSnew.elements.C
-            Plot_CMap(currSnew);
-        end
-        
-        % Axes 3
-        axes(subhandle(3));
-        if currSnew.elements.C
-            Plot_OVF(currSnew)
-        end
-        
-        % Axes 4
-        axes(subhandle(4));
-        Plot_RawMean(currSnew);
-        
-        % Axes 5
-        axes(subhandle(5));
-        Plot_Binmap(currSnew);
-        
-        % Axes 6
-        try
-            axes(subhandle(6));
-            Plot_2DHistOVF(currSnew);
-        catch
-            currSnew.Size
-        end
-		
-        set(hpanelmultiple,'Visible','on');
-        set(hpanelsingle,'Visible','off');
-		
     end
 
 %% Control raw images radio button group
@@ -2695,7 +2766,9 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                     colormap(graycmap);
                     caxis([0,1.6]);
                 else
-                    colormap(gray);
+                    colormap(flipud(gray));
+                    
+                    %caxis([0, max(max(max(Sspectr(:,:,rawidx))))+0.1]);
                 end
                 plottitle=sprintf('%geV',energy(rawidx(i)));
                 title(plottitle);
@@ -2727,7 +2800,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 colormap(graycmap);
                 caxis([0,1.6]);
             else
-                colormap(gray);
+                colormap(flipud(gray));
+                %caxis([0, max(max(max(Sspectr(:,:,rawidx))))+0.1]);
             end
             plottitle=sprintf('%geV',energy(rawidx(imageselectionvalue)));
             title(plottitle);
@@ -2774,9 +2848,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             return
         end
         
-        figure;
-        plot(currSnew.eVenergy, currSnew.normOrgSpec{partnum});
+        figure; hold on;
+        plot(currSnew.eVenergy, currSnew.normOrgSpec{partnum}, 'Color',[0,0.6667,0]);
+        plot(currSnew.eVenergy, currSnew.normInorgSpec{partnum}+0.2, 'Color', 'b');
+        plot(currSnew.eVenergy, currSnew.normSootSpec{partnum}+0.4, 'Color', [1,0,0]);
+        xlim([280, 305]);
+        legend({'Org','Inorg','Soot'});
         pfig;
+        cspecfig('Labels',true);
         
     end
 

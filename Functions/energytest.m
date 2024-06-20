@@ -12,8 +12,8 @@ end
 [sPreFlag, sPostFlag, cpreflag, cpostflag, kpreflag, kpostflag, capreflag, capostflag, npreflag, npostflag, opreflag, opostflag] = deal(0);
 
 %% Testing for Sulfur
-[~,sPreIdx, sPreFlag] = ClosestValue(energy, 160, [150, 170], 'Error Message', 'missing S Pre-edge energy');
-[~,sPostIdx, sPostFlag] = ClosestValue(energy, 190, [180, 200], 'Error Message', 'missing S Post-edge energy');
+[~,sPreIdx, sPreFlag] = ClosestValue(energy, 160, [150, 170], 'Display Errors', false);
+[~,sPostIdx, sPostFlag] = ClosestValue(energy, 190, [180, 200], 'Display Errors', false);
 
 if sPreFlag == 1 && sPostFlag == 1
     Snew.elements.S = 1;
