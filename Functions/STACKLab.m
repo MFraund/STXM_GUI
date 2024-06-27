@@ -311,6 +311,7 @@ xlabel('Photon energy (eV)','FontSize',11,'FontWeight','normal')
 ylabel('Absorbance (OD)','FontSize',11,'FontWeight','normal')
 hold off
 set(gca,'buttondownfcn',@mouseEvent);
+% cspecfig;
 
 return
 
@@ -338,10 +339,13 @@ axis image
 colorbar
 
 
+
+
 % --- Function used to draw updated SpecViewer
 function drawSpecViewer(hObject,handles,energyposition)
 
 axes(handles.SpecViewer)
+
 
 %try has to be used to test if specArray exists
 try
@@ -371,6 +375,7 @@ try
     ylabel('Absorbance (OD)','FontSize',11,'FontWeight','normal')
     hold off
     set(gca,'buttondownfcn',@mouseEvent);
+%     cspecfig;
     
 catch 
     
@@ -391,8 +396,10 @@ catch
     hold off
     clear handles.specArray
     set(gca,'buttondownfcn',@mouseEvent)
+%     cspecfig;
     
 end
+
 
 return
 

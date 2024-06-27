@@ -54,6 +54,7 @@ end
 
 %% Input Checking
 [varargin, spThresh] = ExtractVararginValue(varargin, 'sp2 Threshold', 0.35);
+[varargin, inorgThresh] = ExtractVararginValue(varargin, 'Inorganic Threshold', 0.5);
 [varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
 
 [varargin, carbonLimitSN] = ExtractVararginValue(varargin, 'Carbon SN Limit', 3);
@@ -172,9 +173,9 @@ prepost(prepost < prepostLimitSN.*noise_prepost) = 0;
 %%%Thresholding inorganics vs organics according to Moffet 2010.  0.5 is
 %%%the value for KCl and works in general.  NaCl threshold would be ~1
 %%%instead and NH4SO4 is 0.85
-inorgthresh = 0.5;
-Snew.inorgthresh = inorgthresh;
-prepost(prepost<inorgthresh)=0;
+% inorgthresh = inorgThresh; %0.5
+Snew.inorgThresh = inorgThresh;
+prepost(prepost<inorgThresh)=0;
 
 prepostmask=prepost;
 prepostmask = medfilt2(prepost,[3,3]);

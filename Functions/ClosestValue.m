@@ -7,7 +7,7 @@ function [closestVal, closestIdx, valFound_bool] = ClosestValue(vector, value, b
 % ======
 % vector - 1-D vector
 % value - number to find within vector
-% bounds - scalar or 2-element vector.  
+% bounds - scalar or 2-element vector.  inf (default)
 %          If scalar, bounds will be [value - bounds, value + bounds
 % 'Error Message' - (optional) string to display if value is out of bounds given.
 %
