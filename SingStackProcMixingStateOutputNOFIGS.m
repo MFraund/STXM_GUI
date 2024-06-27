@@ -166,10 +166,12 @@ if Snew.elements.C == 1
     %savedbinmap = givenBinMap; % Currently Unused
     
     Snew = DirLabelOrgVolFrac(Snew,inorganic,organic);
-    %     [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
+    [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
+%     [Snew] = MixingState_CComp(Snew); %updated script to insert at some
+%     point
     Snew = CropParticles(Snew);
-	Particles = ParticlesInfo(Snew);
-	Mixing = 0;
+% 	Particles = ParticlesInfo(Snew);
+% 	Mixing = 0;
 else
 % 	[~, Particles] = MixingState(Snew,datafolder,filenames);
 	Mixing = 0;

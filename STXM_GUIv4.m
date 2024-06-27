@@ -35,14 +35,16 @@ hreadytitle = uicontrol('Style','text','String','Data to Run',...
     'Units','normalized',...
     'Position',[0.12,0.88,0.07,0.02]);
 
-hlistready = uicontrol(...
-    'Style','listbox',...
-    'Max',100,...
-    'Min',0,...
-    'Units','normalized',...
+dataListFontSize = 8;
+
+hlistready = uicontrol('Style','listbox','Max',100,'Min',0,'Units','normalized',...
+    'FontSize',dataListFontSize,...
     'KeyPressFcn',{@hlistreadykey_callback},...
     'Callback',{@hlistready_callback},...
     'Position',[0.01,0.17,0.3,0.7]);
+
+hListDisplayParticleNum = uicontrol('Style','listbox', 'Max', 100,'Min', 0,'Units','normalized',...
+    'Position',[0.28, 0.17, 0.03, 0.7],'Enable','inactive','FontSize',dataListFontSize);
 
 % Analysis Window Type
 routineString = {...
@@ -1712,40 +1714,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 Dataset.(currfov) = tempdataset.(currfov);
                 
             end
-			
-%             normPartSpec = cell(0);
-%             nPart = max(max(Dataset.(currfov).Snew.LabelMat));
-%             specmask = Dataset.(currfov).Snew.spectr .* Dataset.(currfov).Snew.binmap;
-%             
-%             if length(Dataset.(currfov).Snew.eVenergy) > 1 && Dataset.(currfov).Snew.elements.C == 1
-%                 for p = 1:nPart
-%                     
-%                     % 		if length(normPartSpec) == 43
-%                     % 			text = 1;
-%                     % 		end
-%                     
-%                     currPartMask = zeros(size(Dataset.(currfov).Snew.binmap));
-%                     currPartMask(Dataset.(currfov).Snew.LabelMat==p) = 1;
-%                     specPartMask = specmask .* currPartMask;
-%                     specPartMask(isinf(specPartMask)) = NaN;
-%                     for k = 1:size(specPartMask,3)
-%                         specPartMask(:,:,k) = medfilt2(specPartMask(:,:,k));
-%                     end
-%                     
-%                     currPartSpec = squeeze(mean(mean(specPartMask,2,'omitnan'),1,'omitnan'));
-%                     currPartSpec = currPartSpec - min(currPartSpec); %making sure values are only positive
-%                     
-%                     currEnergy = Dataset.(currfov).Snew.eVenergy;
-%                     
-%                     %Will be many copies of the same path, but will preserve particle identification for later
-%                     inputds = [currEnergy, currPartSpec];
-%                     [~, out2] = norm2poly_MF(6, inputds, 3, [260, 284, 300, 385]);
-%                     % 		normPartSpec = [normPartSpec; STXMfit(currEnergy, currPartSpec)];
-%                     normPartSpec = [normPartSpec; out2];
-%                     
-%                 end
-%             end
-%             Dataset.(currfov).Snew.ParticleSpec = normPartSpec;
+			displayParticleNum(j,1) = Dataset.(currfov).Snew.NumParticles;
             
 			hwait.Name = ['Analyzing ', num2str(j+1),' of ', num2str(lfiledirs)];
 			disp(j);
@@ -1757,6 +1726,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		
 		filedirs(removelist) = [];
 		readydirs(removelist) = [];
+        set(hListDisplayParticleNum,'String',displayParticleNum);
 		set(hlistready,'String',readydirs);
 		
 		
@@ -2233,23 +2203,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% listready callback
     function hlistready_callback(~,~)
+        hListDisplayParticleNum.Value = hlistready.Value;
         popupval = get(hroutinepopup,'Value');
         popupstr = get(hroutinepopup,'String');
         
         if strcmp(popupstr{popupval},'Data Viewer') || strcmp(popupstr{popupval},'EDXmapview')
             hselect_callback()
-            %         get(hlistready,'Value');
-            %             key = event.Key;
-            %             if strcmp(key,'leftarrow')% == 30
-            %                 hleft_callback();
-            %             elseif strcmp(key,'rightarrow') %== 31
-            %                 hright_callback();
-            %             end
         end
-        
-        
-        
-        
         
     end
 
@@ -2411,10 +2371,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         assignin('base','S',currS);
 		
 		try
-			CMixing = Dataset.(Datasetnames{readyvalue}).CMixing;
-			CParticles = Dataset.(Datasetnames{readyvalue}).CParticles;
-			assignin('base','Mixing',CMixing);
-			assignin('base','Particles',CParticles);
+			Mixing = Dataset.(Datasetnames{readyvalue}).Mixing;
+			Particles = Dataset.(Datasetnames{readyvalue}).Particles;
+			assignin('base','Mixing',Mixing);
+			assignin('base','Particles',Particles);
 		catch
 		
 		end
@@ -2813,19 +2773,29 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 
 %% Control for SpectraViewer
     function SpectraViewerCallback()
+        CMapSilhouetteCheck = get(hCMapSilhouetteCheck,'Value');
         readyvalue = get(hlistready,'Value');
         specobjs = findobj('Tag','SpectraViewer');
         set(specobjs, 'Visible','on');
         currSnew = Dataset.(Datasetnames{readyvalue}).Snew;
         
         delete(gca);
-        axes(...
+        
+        specViewerAxes = axes(...
             'Units','normalize',...
             'Position',[0.07,0.06,0.9,0.9],...
             'Parent',hpanelsingle,...
             'Tag','haxes',...
             'HandleVisibility','on');
         
+%         Plot_CMap(currSnew, 'Axes Handle',specViewerAxes);
+%         axis normal %this part needed to get the selection picking positioning to work
+        if CMapSilhouetteCheck == 1
+            currSnew = CMapBackground(currSnew);
+            image(uint8(currSnew.CMapSilhouette));
+        else
+            image(uint8(currSnew.RGBCompMap));
+        end
         image(uint8(currSnew.RGBCompMap));
         title('select particle to expand spectra');
         
@@ -2850,10 +2820,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         figure; hold on;
         plot(currSnew.eVenergy, currSnew.normOrgSpec{partnum}, 'Color',[0,0.6667,0]);
-        plot(currSnew.eVenergy, currSnew.normInorgSpec{partnum}+0.2, 'Color', 'b');
-        plot(currSnew.eVenergy, currSnew.normSootSpec{partnum}+0.4, 'Color', [1,0,0]);
+        plot(currSnew.eVenergy, currSnew.normInorgSpec{partnum}+0.4, 'Color', 'b');
+        plot(currSnew.eVenergy, currSnew.normSootSpec{partnum}+0.6, 'Color', [1,0,0]);
+        plot(currSnew.eVenergy, currSnew.normSilSpec{partnum}+0.8, 'Color', [1,1,1].*0.6);
         xlim([280, 305]);
-        legend({'Org','Inorg','Soot'});
+        legend({'Org','Inorg','Soot', 'Silhouette'});
+        xlabel('Energy (eV)');
+        ylabel('Intensity (arb.)');
         pfig;
         cspecfig('Labels',true);
         
@@ -3124,25 +3097,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
             end
             
-            if Snew.elements.S == 1
-                Snew = SulfurMaps(Snew);
-            end
-            
-            if Snew.elements.K == 1
-                Snew = PotassiumMaps(Snew);
-            end
-            
-            if Snew.elements.Ca == 1
-                Snew = CalciumMaps(Snew);
-            end
-            
-            if Snew.elements.N == 1
-                Snew = NitrogenMaps(Snew);
-            end
-            
-            if Snew.elements.O == 1
-                Snew = OxygenMaps(Snew);
-            end
+            Snew = ElementPrePostMaps(Snew, 'Element', 'Ca');
+            Snew = ElementPrePostMaps(Snew, 'Element', 'K');
+            Snew = ElementPrePostMaps(Snew, 'Element', 'S');
+            Snew = ElementPrePostMaps(Snew, 'Element', 'N');
+            Snew = ElementPrePostMaps(Snew, 'Element', 'O');
             
             if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
                 Snew = CNOeleMaps(Snew);
@@ -3163,6 +3122,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			Dataset.(Datasetnames{readyval}).Mixing = Mixing;
 			Dataset.(Datasetnames{readyval}).Particles = Particles;
 			Dataset.(Datasetnames{readyval}).Directory = datafolder;
+            
+            displayParticleNum = hListDisplayParticleNum.String;
+            displayParticleNum(readyval,:) = num2str(Dataset.(Datasetnames{readyval}).Snew.NumParticles);
+            hListDisplayParticleNum.String = displayParticleNum;
 			hselect_callback();
             %hanalyze_callback();
         end
@@ -3217,25 +3180,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             [Mixing, Particles] = MixingState(Snew,datafolder,filenames);
         end
         
-        if Snew.elements.S == 1
-            Snew = SulfurMaps(Snew);
-        end
-        
-        if Snew.elements.K == 1
-            Snew = PotassiumMaps(Snew);
-        end
-        
-        if Snew.elements.Ca == 1
-            Snew = CalciumMaps(Snew);
-        end
-        
-        if Snew.elements.N == 1
-            Snew = NitrogenMaps(Snew);
-        end
-        
-        if Snew.elements.O == 1
-            Snew = OxygenMaps(Snew);
-        end
+        Snew = ElementPrePostMaps(Snew, 'Element', 'Ca');
+        Snew = ElementPrePostMaps(Snew, 'Element', 'K');
+        Snew = ElementPrePostMaps(Snew, 'Element', 'S');
+        Snew = ElementPrePostMaps(Snew, 'Element', 'N');
+        Snew = ElementPrePostMaps(Snew, 'Element', 'O');
         
         if Snew.elements.C == 1 && Snew.elements.N == 1 && Snew.elements.O == 1
             Snew = CNOeleMaps(Snew);
@@ -3255,6 +3204,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         Dataset.(Datasetnames{readyval}).Mixing = Mixing;
         Dataset.(Datasetnames{readyval}).Particles = Particles;
         Dataset.(Datasetnames{readyval}).Directory = datafolder;
+        
+        displayParticleNum = hListDisplayParticleNum.String;
+        displayParticleNum(readyval,:) = num2str(Dataset.(Datasetnames{readyval}).Snew.NumParticles);
+        hListDisplayParticleNum.String = displayParticleNum;
+            
         hselect_callback();
     end
 
