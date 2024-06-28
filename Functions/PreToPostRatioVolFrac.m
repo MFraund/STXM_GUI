@@ -74,16 +74,16 @@ switch org
     case 'glucose'
         uorgpre = ugluc_pre;
         uorgpost = ugluc_post;
-    case 'tricarboxylic acid'
+    case 'tricarboxylic'
         uorgpre = uPropane123TriCarboxylicAcid_pre;
         uorgpost = uPropane123TriCarboxylicAcid_post;
-    case 'pinonic acid'
+    case 'pinonic'
         uorgpre = uPinonicAcid_pre;
         uorgpost = uPinonicAcid_post;
     case 'pinene'
         uorgpre = uPinene_pre;
         uorgpost = uPinene_post;
-    case 'oxalic acid'
+    case 'oxalic'
         uorgpre = uoxal_pre;
         uorgpost = uoxal_post;
 end
