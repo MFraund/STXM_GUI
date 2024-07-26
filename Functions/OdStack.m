@@ -32,6 +32,7 @@ function S=OdStack(structin, varargin)
 % end
 
 [varargin, autoGamma_bool] = ExtractVararginValue(varargin, 'Auto Gamma', true);
+[varargin, adSen] = ExtractVararginValue(varargin, 'Adaptive Sensitivity', 0.01);
 [varargin, gammaLevel] = ExtractVararginValue(varargin, 'Gamma Level', 2);
 [varargin, strelSize] = ExtractVararginValue(varargin, 'Strel Size', 30);
 [varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
@@ -93,7 +94,7 @@ elseif strcmpi(threshMethod,'map')==1 % Thresholding for maps
     tempMask=im2bw(grayim,Thresh); %% Give binary image
     
 elseif strcmpi(threshMethod,'adaptive') == 1 % Adaptive thresholding
-    T_ad = adaptthresh(grayim,0.01,'Statistic','mean','ForegroundPolarity','bright');
+    T_ad = adaptthresh(grayim,adSen,'Statistic','mean','ForegroundPolarity','bright');
 	tempMask = imbinarize(grayim,T_ad);
 	%mask = bwareaopen(mask, rmPixelSize, 8);
 	

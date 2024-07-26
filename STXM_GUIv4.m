@@ -123,7 +123,7 @@ hassumedinorgpopup = uicontrol('Style','popupmenu', 'Units','normalized','Tag','
 
 hassumedorgpopup = uicontrol('Style','popupmenu','Units','normalized','Parent',startingPanel,...
 	'Position',[0.02,0.7,0.1,0.05],...
-	'String',{'sucrose','adipic','glucose','oxalic'},...
+	'String',{'sucrose','adipic','glucose','oxalic', 'tricarboxylic', 'pinonic','pinene'},...
     'Value',2,...
 	'Tag','Load');
 
@@ -135,9 +135,14 @@ hpickelementtype_label = uicontrol('Style','text','Tag','Load','Units','normaliz
     'String','Element Type Must be Present',...
     'Position',[0.20, 0.60, 0.15, 0.05]);
 
-hpickelementtype = uicontrol('Style','edit','Units','normalized','Tag','Load','Parent',startingPanel,...
-	'Position',[0.20, 0.55, 0.15, 0.05],...
-	'String','C');
+% hpickelementtype = uicontrol('Style','edit','Units','normalized','Tag','Load','Parent',startingPanel,...
+% 	'Position',[0.20, 0.55, 0.15, 0.05],...
+% 	'String','C');
+
+hPopupElementType = uicontrol('Style','popupmenu','Tag','Load','Units','normalized','Parent',startingPanel,...
+    'Position',[0.20, 0.55, 0.15, 0.05],...
+    'Value',1,...
+    'String',{'C','S','K','Ca','N','O'});
 
 
 hStartingDir_Label = uicontrol('Style','text','Tag','Load','Units','normalized','Parent',startingPanel,...
@@ -725,9 +730,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
 		if isempty(filedirs)
 			disp('Must pick some files');
-		end
+        end
         
-        elementPick = get(hpickelementtype, 'String');
+        elementListStr = hPopupElementType.String;
+        elementListIdx = hPopupElementType.Value;
+        elementPick = elementListStr{elementListIdx};
+%         elementPick = get(hpickelementtype, 'String');
         removelist_ele = [];
         
         numdirs = length(filedirs);
@@ -818,7 +826,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			
         end
 		
-        elementPick = get(hpickelementtype, 'String');
+        elementListStr = hPopupElementType.String;
+        elementListIdx = hPopupElementType.Value;
+        elementPick = elementListStr{elementListIdx};
+%         elementPick = get(hpickelementtype, 'String');
         removelist_ele = [];
         
 		numdirs = length(filedirs);
@@ -971,6 +982,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         % Getting chosen value
 		readylistvalue = get(hlistready,'Value');
         readyliststring = get(hlistready,'String');
+        
+        displayParticleListString = hListDisplayParticleNum.String;
 		
 		% Removing chosen value
         readyliststring(readylistvalue) = [];
@@ -989,6 +1002,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         set(hlistready,'String',readyliststring,'Value',newListValue);
         
+        if ~isempty(displayParticleListString)
+            displayParticleListString(readylistvalue) = [];
+            set(hListDisplayParticleNum,'String',displayParticleListString,'Value',newListValue);
+        end
+        
 		% Turning off buttons if needed
 		if isempty(readyliststring)
 			set(hremove,'Enable','off');
@@ -1005,7 +1023,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function haveragevariable_callback(~,~)
         
         % Preallocation
-        [OVFvec, Sizevec, PartLabelVec, CompSizeVec, DiVec, DalphaVec, DgammaVec] = deal([]);
+        [OVFvec, Sizevec, PartLabelVec, CompSizeVec] = deal([]);
+        [DiVec, HiVec, DalphaVec, DgammaVec, partMFracVec, compMFracVec, partMassVec, compMassVec, totMassVec] = deal([]);
         [partDirList, croppedOVF, partMask, cSpecParts, rawParts] = deal(cell(0));
         [partEnergy, normPartSpec, normPartOrgSpec, normPartOVFSpec] = deal(cell(0));
         
@@ -1049,6 +1068,12 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
                 % Mixing State
                 currSnew = MixingState_CComp(currSnew);
+                partMassVec = [partMassVec ; currSnew.Mixing.partMass];
+                compMassVec = [compMassVec ; currSnew.Mixing.compMass];
+                totMassVec = [totMassVec ; currSnew.Mixing.totMass];
+                partMFracVec = [partMFracVec ; currSnew.Mixing.partMFrac];
+                compMFracVec = [compMFracVec ; currSnew.Mixing.compMFrac];
+                HiVec = [HiVec ; currSnew.Mixing.Hi];
                 DiVec = [DiVec ; currSnew.Mixing.Di];
                 DalphaVec = [DalphaVec; currSnew.Mixing.Dalpha];
                 DgammaVec = [DgammaVec; currSnew.Mixing.Dgamma];
@@ -1077,6 +1102,21 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors_GUI.croppedOVF = croppedOVF;
         DataVectors_GUI.cSpecParts = cSpecParts;
         DataVectors_GUI.rawParts = rawParts;
+        
+%         partMassGroup = sum(partMassVec);
+        compMassGroup = sum(compMassVec);
+        totMassGroup = sum(totMassVec);
+        partMFracGroup = partMassVec ./ totMassGroup;
+        compMFracGroup = compMassGroup ./ totMassGroup;
+        Hgamma = sum(-compMFracGroup .* log(compMFracGroup), 'omitnan');
+        Halpha = sum(partMFracGroup .* HiVec, 'omitnan');
+%         Hgamma = sum(-compMFracVec .* log(compMFracVec), 'omitnan');
+        Dalpha = exp(Halpha);
+        Dgamma = exp(Hgamma);
+        Chi = (Dalpha - 1) ./ (Dgamma - 1);
+        DataVectors_GUI.Dalpha = Dalpha;
+        DataVectors_GUI.Dgamma = Dgamma;
+        DataVectors_GUI.Chi = Chi;
         
         DataVectors_GUI.DiVec = DiVec;
         DataVectors_GUI.DalphaVec = DalphaVec;
@@ -1714,7 +1754,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 Dataset.(currfov) = tempdataset.(currfov);
                 
             end
-			displayParticleNum(j,1) = Dataset.(currfov).Snew.NumParticles;
+			displayParticleNum{j,1} = Dataset.(currfov).Snew.NumParticles;
             
 			hwait.Name = ['Analyzing ', num2str(j+1),' of ', num2str(lfiledirs)];
 			disp(j);
@@ -1771,7 +1811,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 		toc
 	end
 
-%% hselect dropdown menu
+%% hselect dropdown menu <<<<<<<<<<<<
     function hselect_callback(~,~)
         routineval = get(hroutinepopup,'Value');
         routinestr = get(hroutinepopup,'String');
@@ -2409,6 +2449,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         eleflagvec = [Sval;Cval;Kval;Caval;Nval;Oval];
         totelefield = {'totS','TotC','totK','totCa','totN','totO'};
+        eleSymbols = {'S','C','K','Ca','N','O'};
         
         elenum = Sval + Cval + Kval + Caval + Nval + Oval;
         
@@ -2441,20 +2482,23 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         panelplots = findobj('Parent',hpanelmultiple);
         delete(panelplots);
         if radiomultipleval == 1
-            set(hpanelmultiple,'Visible','on');
             set(hpanelsingle,'Visible','off');
+            set(hpanelmultiple,'Visible','on');
             
             for j = 1:sum(eleflagvec)
                 
-                subhandle{j} = subplot(2,2,j);
-                imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(j)}));
-                axis image
-                xlabel('X (\mum)');
-                ylabel('Y (\mum)');
-                colormap('parula');
-                set((subhandle{j}),'Parent',hpanelmultiple);
-                title(totelefield{checkedele(j)});
-                cbar{i} = colorbar;
+                subhandle{j} = subplot(2,2,j,'Parent',hpanelmultiple);
+                Plot_ElePrepost(currSnew, 'Element', eleSymbols{checkedele(j)});
+                %                 set((subhandle{j}),'Parent',hpanelmultiple);
+                
+%                 imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(j)}));
+%                 axis image
+%                 xlabel('X (\mum)');
+%                 ylabel('Y (\mum)');
+%                 colormap('parula');
+
+%                 title(totelefield{checkedele(j)});
+%                 cbar{i} = colorbar;
                 
             end
             
@@ -2470,41 +2514,43 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 'Tag','haxes',...
                 'HandleVisibility','on');
             
-            switch imageselectionvalue
-                case 1
-                    imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
-                    axis image
-                    colormap('gray');
-                    title(totelefield{checkedele(1)});
-                    xlabel('X (\mum)');
-                    ylabel('Y (\mum)');
-                    
-                    
-                case 2
-                    imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(2)}));
-                    axis image
-                    colormap('gray');
-                    title(totelefield{checkedele(2)});
-                    xlabel('X (\mum)');
-                    ylabel('Y (\mum)');
-                    
-                case 3
-                    imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(3)}));
-                    axis image
-                    colormap('gray');
-                    title(totelefield{checkedele(3)});
-                    xlabel('X (\mum)');
-                    ylabel('Y (\mum)');
-                    
-                case 4
-                    imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(4)}));
-                    axis image
-                    colormap('gray');
-                    title(totelefield{checkedele(4)});
-                    xlabel('X (\mum)');
-                    ylabel('Y (\mum)');
-                    
-            end 
+            Plot_ElePrepost(currSnew, 'Element', eleSymbols{checkedele(imageselectionvalue)});
+            
+%             switch imageselectionvalue
+%                 case 1
+%                     imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(1)}));
+%                     axis image
+%                     colormap('gray');
+%                     title(totelefield{checkedele(1)});
+%                     xlabel('X (\mum)');
+%                     ylabel('Y (\mum)');
+%                     
+%                     
+%                 case 2
+%                     imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(2)}));
+%                     axis image
+%                     colormap('gray');
+%                     title(totelefield{checkedele(2)});
+%                     xlabel('X (\mum)');
+%                     ylabel('Y (\mum)');
+%                     
+%                 case 3
+%                     imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(3)}));
+%                     axis image
+%                     colormap('gray');
+%                     title(totelefield{checkedele(3)});
+%                     xlabel('X (\mum)');
+%                     ylabel('Y (\mum)');
+%                     
+%                 case 4
+%                     imagesc([0,currSnew.Xvalue],[0,currSnew.Yvalue],currSnew.(totelefield{checkedele(4)}));
+%                     axis image
+%                     colormap('gray');
+%                     title(totelefield{checkedele(4)});
+%                     xlabel('X (\mum)');
+%                     ylabel('Y (\mum)');
+%                     
+%             end 
         end        
 	end
 
@@ -2863,7 +2909,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 %% run and display EDXmap
 
 
-%% run thresholding slider routine
+%% >> run thresholding slider routine
     function hmask_adjust_callback(~,~)
         readyval = get(hlistready,'Value');
         Snew = Dataset.(Datasetnames{readyval}).Snew;
@@ -2878,15 +2924,21 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         end
         
         if hasfield(Snew, 'rmPixelSize')
-            currSmallParticleVal = Snew.rmPixelSize;
+            initSmallParticleVal = Snew.rmPixelSize;
         else
-            currSmallParticleVal = 7;
+            initSmallParticleVal = 7;
         end
         
         if hasfield(Snew, 'strelSize')
-            currStrelSize = Snew.strelSize;
+            initStrelSize = Snew.strelSize;
         else
-            currStrelSize = 30;
+            initStrelSize = 30;
+        end
+        
+        if hasfield(Snew, 'adaptiveSensitivity')
+            initAdaptiveSensitivity = Snew.adaptiveSensitivity;
+        else
+            initAdaptiveSensitivity = 0.01;
         end
         
         threshfig = figure(...
@@ -2905,7 +2957,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Units','normalized',...
             'Max',20,...
             'Value',beginningthreshlevel,...
-            'Position',[0.05,0.18,0.9,0.04],...
+            'Position',[0.1,0.23,0.85,0.04],...
             'Callback',{@hthreshslide_callback});
         
         hthreshtext = uicontrol(...
@@ -2913,14 +2965,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Parent',threshfig,...
             'Units','normalized',...
             'String',['Gamma = ', num2str(beginningthreshlevel)],...
-            'Position',[0.5,0.22,0.1,0.03]);
+            'Position',[0.5,0.27,0.1,0.016]);
         
         hsavethresh = uicontrol(...
             'Style','pushbutton',...
             'Parent',threshfig,...
             'Units','normalized',...
             'String','Save Mask Threshold',...
-            'Position',[0.1,0.22,0.1,0.07],...
+            'Position',[0.01,0.15,0.073,0.07],...
             'Callback',{@hsavethresh_callback});
         
         hdefaultthresh = uicontrol(...
@@ -2928,34 +2980,44 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             'Parent',threshfig,...
             'Units','normalized',...
             'String','Reset Thresh Value',...
-            'Position',[0.3,0.22,0.1,0.07],...
+            'Position',[0.01,0.05,0.073,0.07],...
             'Callback',{@hdefaultthresh_callback});
         
         hFineThreshControl = uicontrol('Style','checkbox','Parent',threshfig,...
             'Units','normalized','String','Fine Thresholding Control (x10)',...
-            'Position',[0.7, 0.22, 0.1, 0.05],...
+            'Position',[0.58, 0.27, 0.1, 0.024],...
             'Callback',{@hFineThreshControl_callback});
+        
+        hAdaptiveSensitivitySlide = uicontrol('Style','slider','Parent',threshfig,'Units','normalized',...
+            'Max',1,...
+            'Value',initAdaptiveSensitivity,...
+            'Position',[0.1,0.15,0.85,0.04],...
+            'Callback',{@hthreshslide_callback});
+        
+        hAdaptiveSensitivityText = uicontrol('Style','text','Parent',threshfig,'Units','normalized',...
+            'Position',[0.5, 0.19,0.1,0.016],...
+            'String',['Adaptive Sensitivity = ', num2str(initAdaptiveSensitivity)]);
         
         hSmallParticleRemoverSlide = uicontrol(...
             'Style','slider',...
             'Parent',threshfig,...
             'Units','normalized',...
             'Max',100,...
-            'Value',currSmallParticleVal,...
-            'Position',[0.05,0.1,0.9,0.04],...
-            'Callback',{@hthreshslide_smallParticleRemover_callback});
+            'Value',initSmallParticleVal,...
+            'Position',[0.1,0.076,0.85,0.04],...
+            'Callback',{@hthreshslide_callback});
         
         hSmallParticleText = uicontrol('Style','text', 'Parent',threshfig,'Units','normalized',...
-            'Position',[0.5, 0.14, 0.1, 0.03],...
-            'String',['Remove Small Particle Size = ', num2str(currSmallParticleVal)]);
+            'Position',[0.5, 0.115, 0.1, 0.016],...
+            'String',['Remove Small Particle Size = ', num2str(initSmallParticleVal)]);
         
-        hStrelSlide = uicontrol('Style','Slider','Parent',threshfig,'Units','normalized','Max',100,'Value',currStrelSize,...
-            'Position',[0.05, 0.01, 0.9, 0.04],...
-            'Callback',{@hthreshslide_strelSlide_callback});
+        hStrelSlide = uicontrol('Style','Slider','Parent',threshfig,'Units','normalized','Max',100,'Value',initStrelSize,...
+            'Position',[0.1, 0.01, 0.85, 0.04],...
+            'Callback',{@hthreshslide_callback});
         
         hStrelSlideText = uicontrol('Style','text','Parent',threshfig','Units','normalized',...
-            'Position',[0.5,0.065,0.1,0.03],...
-            'String', ['Structuring Element Size = ', num2str(currStrelSize)]);
+            'Position',[0.5,0.05,0.1,0.016],...
+            'String', ['Structuring Element Size = ', num2str(initStrelSize)]);
         
         %hSaveSmallParticle = uicontrol('Style','pushbutton','Parent',threshfig,'Units','normalized','String','Save Small Particle Value',...
         %    'Position',[0.1, 0.065, 0.1, 0.07],...
@@ -2976,11 +3038,18 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currthreshval = get(hthreshslide,'Value');
             set(hthreshtext,'String',['Gamma = ', num2str(currthreshval)]);
             
+            currAdaptiveSensitivityVal = get(hAdaptiveSensitivitySlide,'Value');
+            set(hAdaptiveSensitivityText,'String',['Adaptive Sensitivity = ', num2str(currAdaptiveSensitivityVal)]);
+            
             currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
+            set(hSmallParticleText,'String',['Remove Small Particle Size = ', num2str(currSmallParticleVal)]);
+            
             currStrelSize = round(get(hStrelSlide,'Value'),0);
+            set(hStrelSlideText, 'String', ['Structuring Element Size = ', num2str(currStrelSize)]);
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
+                'Adaptive Sensitivity',currAdaptiveSensitivityVal,...
                 'Gamma Level', currthreshval,...
                 'Remove Pixel Size', currSmallParticleVal,...
                 'Strel Size', currStrelSize,...
@@ -3005,48 +3074,74 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
         end
         
-        function hthreshslide_smallParticleRemover_callback(~,~)
-            currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
-            set(hSmallParticleText,'String',['Remove Small Particle Size = ', num2str(currSmallParticleVal)]);
-            
-            currthreshval = get(hthreshslide,'Value');
-            currStrelSize = round(get(hStrelSlide,'Value'),0);
-            
-            Snew = OdStack(S,...
-                'Auto Gamma', 'no',...
-                'Gamma Level', currthreshval,...
-                'Remove Pixel Size', currSmallParticleVal,...
-                'Strel Size', currStrelSize,...
-                'Clear Binmap Border', false);
-            
-            plotimshowpair();
-        end
-        
-        function hthreshslide_strelSlide_callback(~,~)
-            currStrelSize = round(get(hStrelSlide,'Value'),0);
-            set(hStrelSlideText, 'String', ['Structuring Element Size = ', num2str(currStrelSize)]);
-            
-            currthreshval = get(hthreshslide, 'Value');
-            currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
-            
-            Snew = OdStack(S,...
-                'Auto Gamma', 'no',...
-                'Gamma Level', currthreshval,...
-                'Remove Pixel Size', currSmallParticleVal,...
-                'Strel Size', currStrelSize,...
-                'Clear Binmap Border', false);
-            
-            plotimshowpair();
-        end
+        % Make all slide functions a single callback?
+%         function hAdaptiveSensitivitySlide_callback(~,~)
+%             currAdaptiveSensitivityVal = get(hAdaptiveSensitivitySlide,'Value');
+%             set(hAdaptiveSensitivityText,'String',['Remove Small Particle Size = ', num2str(currAdaptiveSensitivityVal)]);
+%             
+%             currthreshval = get(hthreshslide,'Value');
+%             currStrelSize = round(get(hStrelSlide,'Value'),0);
+%             
+%             
+%         end
+%         
+%         function hthreshslide_smallParticleRemover_callback(~,~)
+%             currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
+%             set(hSmallParticleText,'String',['Remove Small Particle Size = ', num2str(currSmallParticleVal)]);
+%             
+%             currthreshval = get(hthreshslide,'Value');
+%             currStrelSize = round(get(hStrelSlide,'Value'),0);
+%             
+%             Snew = OdStack(S,...
+%                 'Auto Gamma', 'no',...
+%                 'Gamma Level', currthreshval,...
+%                 'Remove Pixel Size', currSmallParticleVal,...
+%                 'Strel Size', currStrelSize,...
+%                 'Clear Binmap Border', false);
+%             
+%             plotimshowpair();
+%         end
+%         
+%         function hthreshslide_strelSlide_callback(~,~)
+%             currStrelSize = round(get(hStrelSlide,'Value'),0);
+%             set(hStrelSlideText, 'String', ['Structuring Element Size = ', num2str(currStrelSize)]);
+%             
+%             currthreshval = get(hthreshslide, 'Value');
+%             currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
+%             
+%             Snew = OdStack(S,...
+%                 'Auto Gamma', 'no',...
+%                 'Gamma Level', currthreshval,...
+%                 'Remove Pixel Size', currSmallParticleVal,...
+%                 'Strel Size', currStrelSize,...
+%                 'Clear Binmap Border', false);
+%             
+%             plotimshowpair();
+%         end
         
         function hdefaultthresh_callback(~,~)
-            currthreshval = 2;
-            set(hthreshslide,'Value',currthreshval);
-            set(hthreshtext,'String',num2str(currthreshval));
+            defaultThreshVal = 2;
+            hthreshslide.Value = defaultThreshVal;
+            hthreshtext.String = num2str(defaultThreshVal);
+            
+            defaultStrelSize = 30;
+            hStrelSlide.Value = defaultStrelSize;
+            hStrelSlideText.String = num2str(defaultStrelSize);
+            
+            defaultAdaptiveSensitivity = 0.1;
+            hAdaptiveSensitivitySlide.Value = defaultAdaptiveSensitivity;
+            hAdaptiveSensitivityText.String = num2str(defaultAdaptiveSensitivity);
+            
+            defaultRmPixelSize = 10;
+            hSmallParticleRemoverSlide.Value = defaultRmPixelSize;
+            hSmallParticleText = num2str(round(defaultRmPixelSize));
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
-                'Gamma Level', currthreshval,...
+                'Gamma Level', defaultThreshVal,...
+                'Adaptive Sensitivity',defaultAdaptiveSensitivity,...
+                'Strel Size',defaultStrelSize,...
+                'Remove Pixel Size', defaultRmPixelSize,...
                 'Clear Binmap Border', false);
             
             plotimshowpair();
@@ -3058,20 +3153,20 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             S = Dataset.(Datasetnames{readyval}).S;
             currSmallParticleVal = round(get(hSmallParticleRemoverSlide,'Value'),0);
             currStrelSize = round(get(hStrelSlide,'Value'),0);
+            currAdaptiveSensitivityVal = get(hAdaptiveSensitivitySlide,'Value');
             
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
+                'Adaptive Sensitivity', currAdaptiveSensitivityVal,...
                 'Gamma Level', currthreshval,...
                 'Remove Pixel Size', currSmallParticleVal,...
                 'Strel Size', currStrelSize,...
                 'Manual Io Check', manualIorecheck);
 
             Snew = energytest(Snew);
-%             Snew = makinbinmap(Snew);
-            
-            
+
             if Snew.elements.C == 1
                 Snew = CarbonMapsSuppFigs(Snew);
 
@@ -3107,13 +3202,23 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 Snew = CNOeleMaps(Snew);
             end
 
-            
             mapstest = 1;
             threshlevel = currthreshval;
+            Snew.gamma = threshlevel;
+            
+            adaptiveSensitivity = currAdaptiveSensitivityVal;
+            Snew.adaptiveSensitivity = currAdaptiveSensitivityVal;
+            
+            rmPixelSize = currSmallParticleVal;
+            Snew.rmPixelSize = currSmallParticleVal;
+            
+            strelSize = currStrelSize;
+            Snew.strelSize = currStrelSize;
+            
             savedbinmap = Snew.binmap;
             binadjtest = 1;
             
-            save(['../F',S.particle],'Snew','S','Mixing','Particles','datafolder','mapstest','threshlevel','savedbinmap','binadjtest','-v7.3');
+            save(['../F',S.particle],'Snew','S','Mixing','Particles','datafolder','mapstest','threshlevel','adaptiveSensitivity','rmPixelSize','strelSize','savedbinmap','binadjtest','-v7.3');
             
             close(threshfig);
             
@@ -3124,7 +3229,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
 			Dataset.(Datasetnames{readyval}).Directory = datafolder;
             
             displayParticleNum = hListDisplayParticleNum.String;
-            displayParticleNum(readyval,:) = num2str(Dataset.(Datasetnames{readyval}).Snew.NumParticles);
+            displayParticleNum{readyval} = num2str(Dataset.(Datasetnames{readyval}).Snew.NumParticles);
             hListDisplayParticleNum.String = displayParticleNum;
 			hselect_callback();
             %hanalyze_callback();
@@ -3137,19 +3242,38 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         readyval = get(hlistready,'Value');
         Snew = Dataset.(Datasetnames{readyval}).Snew;
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
-        currthreshval = Snew.gamma;
         S = Dataset.(Datasetnames{readyval}).S;
         
-        if hasfield(Snew, 'rmPixelSize')
-            currSmallParticleVal = Snew.rmPixelSize;
+        if hasfield(Snew, 'gamma')
+            gamma = Snew.gamma;
         else
-            currSmallParticleVal = 7;
+            gamma = 2;
+        end
+        
+        if hasfield(Snew, 'rmPixelSize')
+            rmPixelSize = Snew.rmPixelSize;
+        else
+            rmPixelSize = 7;
+        end
+        
+        if hasfield(Snew, 'strelSize')
+            strelSize = Snew.strelSize;
+        else
+            strelSize = 30;
+        end
+        
+        if hasfield(Snew, 'adaptiveSensitivity')
+            adaptiveSensitivity = Snew.adaptiveSensitivity;
+        else
+            adaptiveSensitivity = 0.01;
         end
         
         Snew = OdStack(S,...
             'Auto Gamma', 'no',...
-            'Gamma Level', currthreshval,...
-            'Remove Pixel Size',currSmallParticleVal,...
+            'Gamma Level', gamma,...
+            'Remove Pixel Size',rmPixelSize,...
+            'Adaptive Sensitivity',adaptiveSensitivity,...
+            'Strel Size',strelSize',...
             'Manual Binmap','yes',...
             'Clear Binmap Border', false);
         
@@ -3192,7 +3316,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         
         mapstest = 1;
-        threshlevel = currthreshval;
+        threshlevel = gamma;
         savedbinmap = Snew.binmap;
         binadjtest = 1;
         
@@ -3206,7 +3330,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         Dataset.(Datasetnames{readyval}).Directory = datafolder;
         
         displayParticleNum = hListDisplayParticleNum.String;
-        displayParticleNum(readyval,:) = num2str(Dataset.(Datasetnames{readyval}).Snew.NumParticles);
+        displayParticleNum{readyval} = num2str(Dataset.(Datasetnames{readyval}).Snew.NumParticles);
         hListDisplayParticleNum.String = displayParticleNum;
             
         hselect_callback();
@@ -3553,7 +3677,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             hold on;
             for k = 1:length(boundaries)
                 boundary = boundaries{k};
-                plot(xvec(boundary(:,2)),yvec(boundary(:,1)),'Color','w','LineWidth',0.5);
+                plot(xvec(boundary(:,2)),yvec(boundary(:,1)),'Color','w','LineWidth',0.2);
             end
             hold off;
         end
