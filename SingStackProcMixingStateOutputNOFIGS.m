@@ -170,6 +170,7 @@ if Snew.elements.C == 1
 %     [Snew] = MixingState_CComp(Snew); %updated script to insert at some
 %     point
     Snew = CropParticles(Snew);
+    Snew = CMapBackground(Snew);
 % 	Particles = ParticlesInfo(Snew);
 % 	Mixing = 0;
 else

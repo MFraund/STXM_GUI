@@ -49,8 +49,18 @@ postim=Snew.spectr(:,:,postidx);
 
 %% Input checking
 if nargin < 3
-    inorganic = 'NaCl';
-    organic = 'adipic';
+    fieldsIn = fieldnames(Snew);
+    if contains(fieldsIn, 'inorganic')
+        inorganic = Snew.inorganic;
+    else
+        inorganic = 'NaCl';
+    end
+    
+    if contains(fieldsIn, 'organic')
+        organic = Snew.organic;
+    else
+        organic = 'adipic';
+    end
 end
 
 [varargin, CaCO3_flag] = ExtractVararginValue(varargin,'CaCO3 Flag', 0);

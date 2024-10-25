@@ -49,29 +49,63 @@ energyLabelsBonds = {...
     };
 
 energyListBonds = [...
-    284.5,...
-    285.1,...
-    286.7,...
-    287.7,...
-    288.3,...
-    288.7,...
-    289.5,...
-    290.4,...
-    297.0,...
-    299.0,...
+    284.5,... %arom
+    285.1,... %alkene (sp2)
+    286.7,... %carbonyl
+    287.7,... %alkane
+    288.3,... %imide
+    288.7,... %carboxylic acid
+    289.5,... %alcohol
+    290.4,... %carbonate
+    297.0,... %K L2
+    299.0,... %K L3
     ];
 
 
 cSpecYLim = get(gca,'YLim');
 cSpecYRange = cSpecYLim(2) - cSpecYLim(1);
 cSpecTextHeight = cSpecYLim(2) - cSpecYRange.*0.08; % text is lower than top of axes by 10% of axes height
+patchWidth = 0.15;
+sootColor = [1,0,0];
+orgColor = [0,0.67,0];
+inorgColor = [0,0,1];
 
 switch labelType
     case 'bonds'
         for cSpecLineIdx = 1:numel(energyListBonds)
-            hline(cSpecLineIdx) = vline(energyListBonds(cSpecLineIdx), 'k--');
+            
+            switch energyListBonds(cSpecLineIdx)
+                case 285.1 %sp2
+                    patchColor = sootColor;
+                    
+                case 286.7 %organics
+                    patchColor = orgColor;
+                case 288.7 %organics
+                    patchColor = orgColor;
+                case 289.5 %organics
+                    patchColor = orgColor;
+                case 288.3 %organics
+                    patchColor = orgColor;
+                    
+                case 290.4 %inorganics
+                    patchColor = inorgColor;
+                case 297.0 %inorganics
+                    patchColor = inorgColor;
+                case 299.0 %inorganics
+                    patchColor = inorgColor;
+                otherwise
+                    patchColor = [1,1,1] .* 0;
+            end
+            
+            patch(...
+                [energyListBonds(cSpecLineIdx) - patchWidth, energyListBonds(cSpecLineIdx) + patchWidth, energyListBonds(cSpecLineIdx) + patchWidth,  energyListBonds(cSpecLineIdx) - patchWidth],...
+                [cSpecYLim(1), cSpecYLim(1), cSpecYLim(2), cSpecYLim(2)],...
+                'red',...
+                'FaceColor',patchColor,'FaceAlpha',0.2,'LineStyle','none');
+%             hline(cSpecLineIdx) = vline(energyListBonds(cSpecLineIdx), 'k--');
             if labelFlag_bool
-                text(energyListBonds(cSpecLineIdx), cSpecTextHeight - cSpecYRange.*0.05.*(-1).^cSpecLineIdx ,energyLabelsBonds{cSpecLineIdx},'FontSize',fontSize,'FontWeight','bold','Rotation',45);
+%                 text(energyListBonds(cSpecLineIdx), cSpecTextHeight - cSpecYRange.*0.05.*(-1).^cSpecLineIdx ,energyLabelsBonds{cSpecLineIdx},'FontSize',fontSize,'FontWeight','bold','Rotation',45); %wobbling around 95% height
+                text(energyListBonds(cSpecLineIdx), cSpecYLim(2)+0.02 ,energyLabelsBonds{cSpecLineIdx},'FontSize',fontSize,'FontWeight','bold','Rotation',45); %above line
             end
         end
         
@@ -86,6 +120,6 @@ switch labelType
 end
 
 
-set(hline,'LineWidth',1);
+% set(hline,'LineWidth',1);
 
 end

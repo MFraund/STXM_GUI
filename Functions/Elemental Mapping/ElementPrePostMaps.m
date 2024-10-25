@@ -96,13 +96,29 @@ if elePreFound_bool && elePostFound_bool
     Snew_in.elements.(element) = 1;
     Snew_in.elements.(ele_bool_label) = true;
     
-    totEle = Snew_in.spectr(:,:,postidx) - Snew_in.spectr(:,:,preidx);
-    totEle(totEle<0) = 0;
-    totEle = totEle .* binmap;
+    preIm = Snew_in.spectr(:,:,preidx);
+    preNoise = std(std(preIm.* ~Snew_in.mask));
+    preImLOD = preIm;
+    preImLOD(preImLOD < preNoise.*3) = 0;
+    
+    postIm = Snew_in.spectr(:,:,postidx);
+    postNoise = std(std(postIm.* ~Snew_in.mask));
+    postImLOD = postIm;
+    postImLOD(postImLOD < postNoise.*3) = 0;
+    
+    totEleLOD = postImLOD - preImLOD;
+    totEleLOD(totEleLOD<0) = 0;
+    totEleLOD = totEleLOD .* binmap;
+    
+%     totEle = postIm - preIm;
+%     totEleNoise = std(std(totEle));
+%     totEleLOD = totEle;
+%     totEleLOD(totEleLOD < totEleNoise.*3) = 0;
+%     totEleLOD = totEleLOD .* binmap;
     
     prepostFieldName = ['tot', element];
     
-    Snew_in.(prepostFieldName) = totEle;
+    Snew_in.(prepostFieldName) = totEleLOD;
 
 else
     Snew_in.elements.(element) = 0;
