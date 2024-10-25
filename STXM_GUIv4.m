@@ -199,30 +199,38 @@ haveragevariable = uicontrol(...
 	'String','Average Variable',...
 	'Units','normalized',...
     'Tag','DataViewer',...
-	'Position',[0.01,0.11,0.09,0.05],...
+	'Position',[0.01,0.11,0.06,0.05],...
 	'Callback',{@haveragevariable_callback});
 
 hparticlecollage = uicontrol('Style','pushbutton','String','Particle Collage',...
     'Units','normalized','Tag','DataViewer','Enable','off',...
-    'Position',[0.11, 0.11, 0.09, 0.05],...
+    'Position',[0.07, 0.11, 0.06, 0.05],...
     'Callback',{@hparticlecollage_callback});
 
 hdatavectorexport = uicontrol('Style','pushbutton','String','Export Updated DV',...
     'Units','normalized','Tag','DataViewer','Enable','off',...
-    'Position',[0.21, 0.11, 0.09, 0.05],...
+    'Position',[0.13, 0.11, 0.06, 0.05],...
     'Callback',{@hdatavectorexport_callback});
 
 hloadparticlecollection = uicontrol('Style','pushbutton','String','Load Particle Collection',...
-    'Units','normalized','Tag','DataViewer','Position',[0.01,0.05,0.09,0.05],...
+    'Units','normalized','Tag','DataViewer','Position',[0.01,0.05,0.06,0.05],...
     'Callback',{@hloadparticlecollection_callback});
 
 hsaveparticlecollection = uicontrol('Style','pushbutton','String','Save Particle Collection',...
-    'Units','normalized','Tag','DataViewer','Position',[0.11,0.05,0.09,0.05],'Enable','off',...
+    'Units','normalized','Tag','DataViewer','Position',[0.07,0.05,0.06,0.05],'Enable','off',...
     'Callback',{@hsaveparticlecollection_callback});
     
 hsaveASparticlecollection = uicontrol('Style','pushbutton','String','Save As Particle Collection',...
-    'Units','normalized','Tag','DataViewer','Position',[0.21,0.05,0.09,0.05],'Enable','off',...
+    'Units','normalized','Tag','DataViewer','Position',[0.13,0.05,0.06,0.05],'Enable','off',...
     'Callback',{@hsaveASparticlecollection_callback});
+
+hSaveDirList = uicontrol('Style','pushbutton','String','Save DirList','Units','normalized',...
+    'Tag','DataViewer','Position',[0.19, 0.11, 0.06, 0.05],'Enable','off',...
+    'Callback',{@hsaveDirList_callback});
+
+hSaveDataVector = uicontrol('Style','pushbutton','String','Save DataVector','Units','normalized',...
+    'Tag','DataViewer','Position',[0.19, 0.05, 0.06, 0.05],'Enable','off',...
+    'Callback',{@hsaveDataVector_callback});
 
 hcollectionpath = uicontrol('Style','text','String',' No Collection Loaded',...
     'Units','normalized','Tag','DataViewer','Position',[0.01, 0.02, 0.3, 0.01]);
@@ -1023,7 +1031,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function haveragevariable_callback(~,~)
         
         % Preallocation
-        [OVFvec, Sizevec, PartLabelVec, CompSizeVec] = deal([]);
+        [OVFvec, Sizevec, PartLabelVec, CompSizeVec, bigCaVec] = deal([]);
         [DiVec, HiVec, DalphaVec, DgammaVec, partMFracVec, compMFracVec, partMassVec, compMassVec, totMassVec] = deal([]);
         [partDirList, croppedOVF, partMask, cSpecParts, rawParts] = deal(cell(0));
         [partEnergy, normPartSpec, normPartOrgSpec, normPartOVFSpec] = deal(cell(0));
@@ -1043,18 +1051,17 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             currSnew = Dataset.(Datasetnames{j}).Snew;
             
+            % Cropping
+            currSnew = CropParticles(currSnew);
+            rawParts = [rawParts ; currSnew.CroppedParticles.rawParts];
+            partMask = [partMask ; currSnew.CroppedParticles.partMask];
+            
             
             for k = 1:length(currSnew.Size)
                 partDirList = [partDirList; Dataset.(Datasetnames{j}).Directory];
             end
             
             Sizevec = [Sizevec, currSnew.Size];
-            
-            % Cropping
-            currSnew = CropParticles(currSnew);
-            rawParts = [rawParts ; currSnew.CroppedParticles.rawParts];
-            partMask = [partMask ; currSnew.CroppedParticles.partMask];
-            
             
             
             if currSnew.elements.C == 1 & currSnew.Size > 0
@@ -1087,6 +1094,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
             end
             
+            if currSnew.elements.Ca == 1 & currSnew.Size > 0
+                tempCaVec = [];
+                for p = 1:length(currSnew.Size)
+                    tempCaVec(p) = sum(sum(currSnew.CroppedParticles.bigPartMask{p} .* currSnew.totCa));
+                end
+                bigCaVec = [bigCaVec; tempCaVec'];
+            end
+            
         end
         close(hwait);
         
@@ -1102,6 +1117,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors_GUI.croppedOVF = croppedOVF;
         DataVectors_GUI.cSpecParts = cSpecParts;
         DataVectors_GUI.rawParts = rawParts;
+        DataVectors_GUI.bigCaVec = bigCaVec;
         
 %         partMassGroup = sum(partMassVec);
         compMassGroup = sum(compMassVec);
@@ -2870,11 +2886,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         plot(currSnew.eVenergy, currSnew.normSootSpec{partnum}+0.6, 'Color', [1,0,0]);
         plot(currSnew.eVenergy, currSnew.normSilSpec{partnum}+0.8, 'Color', [1,1,1].*0.6);
         xlim([280, 305]);
-        legend({'Org','Inorg','Soot', 'Silhouette'});
         xlabel('Energy (eV)');
         ylabel('Intensity (arb.)');
         pfig;
         cspecfig('Labels',true);
+        legend({'Org','Inorg','Soot', 'Undefined'});
         
     end
 
@@ -3766,6 +3782,19 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         ylabel(gca,'Y Position (µm)')
         set(gca,'FontSize',11,'FontWeight','normal');
         
+        xvec = linspace(0, Snew.Xvalue, size(Snew.ThickMap,2));
+        yvec = linspace(0, Snew.Yvalue, size(Snew.ThickMap,1));
+        CMapSilhouetteCheck = get(hCMapSilhouetteCheck,'Value');
+        if CMapSilhouetteCheck == 1
+            boundaries = bwboundaries(Snew.binmap,'noholes');
+            hold on;
+            for k = 1:length(boundaries)
+                boundary = boundaries{k};
+                plot(xvec(boundary(:,2)),yvec(boundary(:,1)),'Color','k','LineWidth',0.5);
+            end
+            hold off;
+        end
+        
     end
 
     function Plot_LabelMat(Snew, varargin)
@@ -3922,7 +3951,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     end
 
     function hStartingDirBroseButton_callback(~,~)
-        selectedDir = uigetdir(pwd,'Select Starting Directory');
+        prevStartDir = hStartingDir.String;
+        selectedDir = uigetdir(prevStartDir,'Select Starting Directory');
         hStartingDir.String = selectedDir;
     end
 

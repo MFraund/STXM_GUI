@@ -65,9 +65,9 @@ energyListBonds = [...
 cSpecYLim = get(gca,'YLim');
 cSpecYRange = cSpecYLim(2) - cSpecYLim(1);
 cSpecTextHeight = cSpecYLim(2) - cSpecYRange.*0.08; % text is lower than top of axes by 10% of axes height
-patchWidth = 0.1;
+patchWidth = 0.15;
 sootColor = [1,0,0];
-orgColor = [0,1,0];
+orgColor = [0,0.67,0];
 inorgColor = [0,0,1];
 
 switch labelType
@@ -94,17 +94,18 @@ switch labelType
                 case 299.0 %inorganics
                     patchColor = inorgColor;
                 otherwise
-                    patchColor = [1,1,1] .* 0.6;
+                    patchColor = [1,1,1] .* 0;
             end
             
             patch(...
                 [energyListBonds(cSpecLineIdx) - patchWidth, energyListBonds(cSpecLineIdx) + patchWidth, energyListBonds(cSpecLineIdx) + patchWidth,  energyListBonds(cSpecLineIdx) - patchWidth],...
                 [cSpecYLim(1), cSpecYLim(1), cSpecYLim(2), cSpecYLim(2)],...
                 'red',...
-                'FaceColor',patchColor,'FaceAlpha',0.5,'LineStyle','none');
+                'FaceColor',patchColor,'FaceAlpha',0.2,'LineStyle','none');
 %             hline(cSpecLineIdx) = vline(energyListBonds(cSpecLineIdx), 'k--');
             if labelFlag_bool
-                text(energyListBonds(cSpecLineIdx), cSpecTextHeight - cSpecYRange.*0.05.*(-1).^cSpecLineIdx ,energyLabelsBonds{cSpecLineIdx},'FontSize',fontSize,'FontWeight','bold','Rotation',45);
+%                 text(energyListBonds(cSpecLineIdx), cSpecTextHeight - cSpecYRange.*0.05.*(-1).^cSpecLineIdx ,energyLabelsBonds{cSpecLineIdx},'FontSize',fontSize,'FontWeight','bold','Rotation',45); %wobbling around 95% height
+                text(energyListBonds(cSpecLineIdx), cSpecYLim(2)+0.02 ,energyLabelsBonds{cSpecLineIdx},'FontSize',fontSize,'FontWeight','bold','Rotation',45); %above line
             end
         end
         

@@ -14,7 +14,7 @@ Snew = in_Snew;
 nParticles = max(max(Snew.LabelMat));
 
 % Preallocation
-[partMask, rawParts, cSpecParts, OVFParts, massParts] = deal(cell(nParticles,1));
+[partMask, rawParts, cSpecParts, OVFParts, massParts, bigPartMask] = deal(cell(nParticles,1));
 
 %% Input Checking
 CarbonMaps_bool = hasfield(Snew, 'RGBCompMap');
@@ -27,6 +27,9 @@ Mass_bool = hasfield(Snew,'MassMap');
 for p = 1:nParticles
     currPartMask = zeros(size(Snew.LabelMat));
     currPartMask(Snew.LabelMat == p) = 1;
+    
+    %Individual Particle Masks
+    bigPartMask{p} = currPartMask;
     
     % This finds the nonzero elements (where the particle is) 
     cropRows = sum(currPartMask,2) ~= 0;
@@ -62,6 +65,7 @@ for p = 1:nParticles
 end
 
 %% Defining Outputs
+Snew.CroppedParticles.bigPartMask = bigPartMask;
 Snew.CroppedParticles.partMask = partMask;
 Snew.CroppedParticles.rawParts = rawParts;
 Snew.CroppedParticles.cSpecParts = cSpecParts;

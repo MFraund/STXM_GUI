@@ -31,13 +31,43 @@ function S=OdStack(structin, varargin)
 % 	method = 'O';
 % end
 
+fieldsIn = fieldnames(structin);
+
+%If a gamma thresholding level is 
+if contains(fieldsIn,'threshlevel')
+    gammaIn = structin.threshlevel; %gamma value attached to input struct
+else
+    gammaIn = 2; %default value
+end
+
+if contains(fieldsIn,'adaptiveSensitivity')
+    sensitivityIn = structin.adaptiveSensitivity;
+else
+    sensitivityIn = 0.01;
+end
+
+if contains(fieldsIn, 'rmPixelSize')
+    pixelRemoveIn = structin.rmPixelSize;
+else
+    pixelRemoveIn = 7;
+end
+
+if contains(fieldsIn, 'strelSize')
+    strelIn = structin.strelSize;
+else
+    strelIn = 30;
+end
+
+
+
+
 [varargin, autoGamma_bool] = ExtractVararginValue(varargin, 'Auto Gamma', true);
-[varargin, adSen] = ExtractVararginValue(varargin, 'Adaptive Sensitivity', 0.01);
-[varargin, gammaLevel] = ExtractVararginValue(varargin, 'Gamma Level', 2);
-[varargin, strelSize] = ExtractVararginValue(varargin, 'Strel Size', 30);
+[varargin, adSen] = ExtractVararginValue(varargin, 'Adaptive Sensitivity', sensitivityIn);
+[varargin, gammaLevel] = ExtractVararginValue(varargin, 'Gamma Level', gammaIn);
+[varargin, strelSize] = ExtractVararginValue(varargin, 'Strel Size', strelIn);
 [varargin, threshMethod] = ExtractVararginValue(varargin, 'Thresh Method', 'Adaptive');
 
-[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', 7);
+[varargin, rmPixelSize] = ExtractVararginValue(varargin, 'Remove Pixel Size', pixelRemoveIn);
 
 [varargin, manualIoCheck] = ExtractVararginValue(varargin, 'Manual Io Check', 'no');
 [varargin, plotflag] = ExtractVararginValue(varargin, 'plotflag', 0);
@@ -45,6 +75,8 @@ function S=OdStack(structin, varargin)
 [varargin, manualBinmapCheck] = ExtractVararginValue(varargin, 'Manual Binmap', 'no');
 [varargin, givenBinmap] = ExtractVararginValue(varargin, 'Binmap', []);
 [varargin, clearBinmapBorder_bool] = ExtractVararginValue(varargin, 'Clear Binmap Border', true);
+
+% 
 
 % create temporary variables
 stack=structin.spectr;
