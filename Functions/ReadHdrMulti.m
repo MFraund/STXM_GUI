@@ -1,7 +1,6 @@
 function [evenergy, xvalue, yvalue, multiregion, positionstruct] = ReadHdrMulti(hdrfile)
-
+%[evenergy, xvalue, yvalue, multiregion, positionstruct] = ReadHdr(file)
 % Read STXM .hdr file to extract energies and x and y pixel sizes
-%[evenergy,xvalue,yvalue,multiregion,positionstruct]=ReadHdr(file)
 % 081011 RCM
 %
 %Input
@@ -35,6 +34,19 @@ while feof(filestream) == 0
 	centeridx = strfind(line,'CentreXPos');
 	centeridx2 = strfind(line,'CentreYPos');
     pos3=strfind(line,'; XRange =');
+    typeFlagInit = strfind(line, 'Type =');
+    typeFlagEnd = strfind(line,'; Flags = ');
+    
+    if ~isempty(typeFlagInit)
+        scanType = line(typeFlagInit + 8: typeFlagEnd - 2);
+        positionstruct.scanType = scanType;
+        switch scanType
+            case {'OSA Scan' , 'Monochromator Scan' , 'Focus Scan', 'NEXAFS Point Scan'}
+                [evenergy, xvalue, yvalue, multiregion] = deal([]);
+                return %will stop running this function here and output only scan type and empty variables
+        end
+        
+    end
 	
 	if isempty(numregions) == 1 
 		multflag = strfind(line,'	Regions = (');
@@ -74,7 +86,7 @@ while feof(filestream) == 0
 			positionstruct.xstep=str2double(line(pos5+10:pos6-1));
 			positionstruct.ystep=str2double(line(pos6+10:pos7-3));
 			positionstruct.xcenter = str2double(line(centeridx+13:centeridx2-3));
-			positionstruct.ycenter = str2double(line(centeridx2+13:pos3-3));
+			positionstruct.ycenter = str2double(line(centeridx2+13:pos3-1));
 			positionstruct.xpts = str2double(line(pos7+10:pos8-3));
             positionstruct.ypts = str2double(line(pos8+10:pos9-1));
 		end
@@ -82,7 +94,7 @@ while feof(filestream) == 0
 		multiregion = 1;
 		if ~isempty(centeridx)
 			positionstruct.xcenter(1,regioncnt) = str2double(line(centeridx+13:centeridx2-3));
-			positionstruct.ycenter(1,regioncnt) = str2double(line(centeridx2+13:pos3-3));
+			positionstruct.ycenter(1,regioncnt) = str2double(line(centeridx2+13:pos3-1));
 			pos4=strfind(line,'; YRange =');
 			pos5=strfind(line,'; XStep =');
 			positionstruct.xvalues(1,regioncnt)=str2double(line(pos3+10:pos4-1));
