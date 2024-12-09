@@ -1031,7 +1031,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
     function haveragevariable_callback(~,~)
         
         % Preallocation
-        [OVFvec, Sizevec, PartLabelVec, CompSizeVec, bigCaVec] = deal([]);
+        [OVFvec, Sizevec, PartLabelVec, CompSizeVec, bigCaVec, bigCVec] = deal([]);
         [DiVec, HiVec, DalphaVec, DgammaVec, partMFracVec, compMFracVec, partMassVec, compMassVec, totMassVec] = deal([]);
         [partDirList, croppedOVF, partMask, cSpecParts, rawParts] = deal(cell(0));
         [partEnergy, normPartSpec, normPartOrgSpec, normPartOVFSpec] = deal(cell(0));
@@ -1096,10 +1096,13 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             
             if currSnew.elements.Ca == 1 & currSnew.Size > 0
                 tempCaVec = [];
+                tempCVec = [];
                 for p = 1:length(currSnew.Size)
                     tempCaVec(p) = sum(sum(currSnew.CroppedParticles.bigPartMask{p} .* currSnew.totCa));
+                    tempCVec(p) = sum(sum(currSnew.CroppedParticles.bigPartMask{p} .* currSnew.TotC));
                 end
                 bigCaVec = [bigCaVec; tempCaVec'];
+                bigCVec = [bigCVec; tempCVec'];
             end
             
         end
@@ -1118,6 +1121,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors_GUI.cSpecParts = cSpecParts;
         DataVectors_GUI.rawParts = rawParts;
         DataVectors_GUI.bigCaVec = bigCaVec;
+        DataVectors_GUI.bigCVec = bigCVec;
         
 %         partMassGroup = sum(partMassVec);
         compMassGroup = sum(compMassVec);
