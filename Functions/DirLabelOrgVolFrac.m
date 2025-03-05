@@ -206,6 +206,10 @@ for i=1:max(max(LabelMat)) % loop over particles
     sumInorgThick=nansum(tinorg(LabelMat==i));
 	sumSootThick = nansum(tsoot(LabelMat==i));
     volFrac(i)=sumOrgThick./(sumOrgThick+sumInorgThick+sumSootThick);
+    
+    thickVecOC(i) = sum(torg(LabelMat==i),'omitnan');
+    thickVecIN(i) = sum(tinorg(LabelMat==i),'omitnan');
+    thickVecEC(i) = sum(tsoot(LabelMat==i),'omitnan');
 	
 	sumOrgMass=nansum(MassMap.org(LabelMat==i));
     sumInorgMass=nansum(MassMap.inorg(LabelMat==i));
@@ -219,6 +223,9 @@ ThickMap(:,:,2) = tinorg;
 ThickMap(:,:,3) = tsoot;
 ThickMap(:,:,4) = volFraction;
 
+Snew.thickVec.oc = thickVecOC;
+Snew.thickVec.in = thickVecIN;
+Snew.thickVec.ec = thickVecEC;
 
 Snew.MassFrac = MassFrac;
 Snew.ThickMap = ThickMap;
