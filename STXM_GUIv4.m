@@ -1032,9 +1032,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         
         % Preallocation
         [OVFvec, Sizevec, PartLabelVec, CompSizeVec, bigCaVec, bigCVec] = deal([]);
-        [DiVec, HiVec, DalphaVec, DgammaVec, partMFracVec, compMFracVec, partMassVec, compMassVec, totMassVec] = deal([]);
+        [DiVec, HiVec, DalphaVec, DgammaVec, partMFracVec, compMFracVec, partMassVec, compMassVec, totMassVec, partCompMFracVec] = deal([]);
         [partDirList, croppedOVF, partMask, cSpecParts, rawParts] = deal(cell(0));
         [partEnergy, normPartSpec, normPartOrgSpec, normPartOVFSpec] = deal(cell(0));
+        [partOrgConvexityVec, partSootConvexityVec, partInConvexityVec,partConvexityVec] = deal([]);
+        [partOrgDistRatioVec, partSootDistRatioVec, partInDistRatioVec, partOVFDistRatioVec] = deal([]);
         
         lfiledirs = length(filedirs);
         
@@ -1075,6 +1077,8 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 
                 % Mixing State
                 currSnew = MixingState_CComp(currSnew);
+                
+                partCompMFracVec = [partCompMFracVec; currSnew.Mixing.partCompMFrac];
                 partMassVec = [partMassVec ; currSnew.Mixing.partMass];
                 compMassVec = [compMassVec ; currSnew.Mixing.compMass];
                 totMassVec = [totMassVec ; currSnew.Mixing.totMass];
@@ -1091,6 +1095,18 @@ graycmap = [graycmap; 0.9,0.3,0.3];
                 normPartSpec = [normPartSpec; currSnew.normPartSpec];
                 normPartOrgSpec = [normPartOrgSpec; currSnew.normOrgSpec];
                 normPartOVFSpec = [normPartOVFSpec; currSnew.normOVFSpec];
+                
+                % Morphology
+                currSnew = CspecInclusions(currSnew,'Plot Inclusions',false,'Plot Convexity',false);
+                partOrgConvexityVec = [partOrgConvexityVec; currSnew.Morphology.orgConvexity];
+                partInConvexityVec = [partInConvexityVec; currSnew.Morphology.inConvexity];
+                partSootConvexityVec = [partSootConvexityVec; currSnew.Morphology.sootConvexity];
+                partConvexityVec = [partConvexityVec; currSnew.Morphology.partConvexity];
+                
+                partOrgDistRatioVec = [partOrgDistRatioVec; currSnew.Morphology.orgDistRatio];
+                partSootDistRatioVec = [partSootDistRatioVec; currSnew.Morphology.sootDistRatio];
+                partInDistRatioVec = [partInDistRatioVec; currSnew.Morphology.inDistRatio];
+                partOVFDistRatioVec = [partOVFDistRatioVec; currSnew.Morphology.ovfDistRatio];
                 
             end
             
@@ -1138,22 +1154,36 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         DataVectors_GUI.Dgamma = Dgamma;
         DataVectors_GUI.Chi = Chi;
         
+        DataVectors_GUI.partMassVec = partMassVec;
+        DataVectors_GUI.compMassVec = compMassVec;
+        DataVectors_GUI.partMFracVec = partMFracVec;
+        DataVectors_GUI.compMFracVec = compMFracVec;
+        DataVectors_GUI.partCompMFracVec = partCompMFracVec;
         DataVectors_GUI.DiVec = DiVec;
         DataVectors_GUI.DalphaVec = DalphaVec;
         DataVectors_GUI.DgammaVec = DgammaVec;
+        
+        
         
         DataVectors_GUI.partEnergy = partEnergy;
         DataVectors_GUI.normPartSpec = normPartSpec;
         DataVectors_GUI.normPartOrgSpec = normPartOrgSpec;
         DataVectors_GUI.normPartOVFSpec = normPartOVFSpec;
         
+        DataVectors_GUI.partOrgConvexityVec = partOrgConvexityVec;
+        DataVectors_GUI.partInConvexityVec = partInConvexityVec;
+        DataVectors_GUI.partSootConvexityVec = partSootConvexityVec;
+        DataVectors_GUI.partConvexityVec = partConvexityVec;
+        
+        DataVectors_GUI.partOrgDistRatioVec = partOrgDistRatioVec;
+        DataVectors_GUI.partSootDistRatioVec = partSootDistRatioVec;
+        DataVectors_GUI.partInDistRatioVec = partInDistRatioVec;
+        DataVectors_GUI.partOVFDistRatioVec = partOVFDistRatioVec;
+        
         DataVectors_GUI.particleGroups.all.particleIdx = 1:length(partDirList);
         
         hdatavectorexport_callback();
         
-%         DataVectors_GUI.Chi = (DataVectors_GUI.Dalpha - 1) ./ (DataVectors_GUI.Dgamma - 1);
-        
-%         assignin('base','DataVectors',DataVectors_GUI);
         hparticlecollage.Enable = 'on';
         hsaveparticlecollection.Enable = 'on';
         hsaveASparticlecollection.Enable = 'on';
@@ -1776,7 +1806,11 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             end
 			displayParticleNum{j,1} = Dataset.(currfov).Snew.NumParticles;
             
-			hwait.Name = ['Analyzing ', num2str(j+1),' of ', num2str(lfiledirs)];
+            if j+1 > lfiledirs
+                hwait.Name = ['DONE'];
+            else
+                hwait.Name = [num2str(j+1),' of ', num2str(lfiledirs), ' - ', filedirs{j+1}(end-12:end)];
+            end
 			disp(j);
 			waitbar(j/lfiledirs);
 			
@@ -2937,6 +2971,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         specmean = mean(Snew.spectr,3);
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
         
+        
         if hasfield(Snew, 'gamma')
             beginningthreshlevel = Snew.gamma;
         else
@@ -3067,9 +3102,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currStrelSize = round(get(hStrelSlide,'Value'),0);
             set(hStrelSlideText, 'String', ['Structuring Element Size = ', num2str(currStrelSize)]);
             
+            threshMethod_str = get(hthresholding_dropdown,'String');
+            threshMethod_val = get(hthresholding_dropdown,'Value');
+            threshMethod = threshMethod_str{threshMethod_val};
+            
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Adaptive Sensitivity',currAdaptiveSensitivityVal,...
+                'Thresh Method',threshMethod,...
                 'Gamma Level', currthreshval,...
                 'Remove Pixel Size', currSmallParticleVal,...
                 'Strel Size', currStrelSize,...
@@ -3156,9 +3196,14 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             hSmallParticleRemoverSlide.Value = defaultRmPixelSize;
             hSmallParticleText = num2str(round(defaultRmPixelSize));
             
+            threshMethod_str = get(hthresholding_dropdown,'String');
+            threshMethod_val = get(hthresholding_dropdown,'Value');
+            threshMethod = threshMethod_str{threshMethod_val};
+            
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Gamma Level', defaultThreshVal,...
+                'Thresh Method',threshMethod,...
                 'Adaptive Sensitivity',defaultAdaptiveSensitivity,...
                 'Strel Size',defaultStrelSize,...
                 'Remove Pixel Size', defaultRmPixelSize,...
@@ -3175,11 +3220,16 @@ graycmap = [graycmap; 0.9,0.3,0.3];
             currStrelSize = round(get(hStrelSlide,'Value'),0);
             currAdaptiveSensitivityVal = get(hAdaptiveSensitivitySlide,'Value');
             
+            threshMethod_str = get(hthresholding_dropdown,'String');
+            threshMethod_val = get(hthresholding_dropdown,'Value');
+            threshMethod = threshMethod_str{threshMethod_val};
+            
             manualIorecheck = inputdlg('maunally choose Io?','manual Io selection',1,{'no'});
             
             Snew = OdStack(S,...
                 'Auto Gamma', 'no',...
                 'Adaptive Sensitivity', currAdaptiveSensitivityVal,...
+                'Thresh Method',threshMethod,...
                 'Gamma Level', currthreshval,...
                 'Remove Pixel Size', currSmallParticleVal,...
                 'Strel Size', currStrelSize,...
@@ -3264,6 +3314,10 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         datafolder = Dataset.(Datasetnames{readyval}).Directory;
         S = Dataset.(Datasetnames{readyval}).S;
         
+        threshMethod_str = get(hthresholding_dropdown,'String');
+        threshMethod_val = get(hthresholding_dropdown,'Value');
+        threshMethod = threshMethod_str{threshMethod_val};
+        
         if hasfield(Snew, 'gamma')
             gamma = Snew.gamma;
         else
@@ -3291,6 +3345,7 @@ graycmap = [graycmap; 0.9,0.3,0.3];
         Snew = OdStack(S,...
             'Auto Gamma', 'no',...
             'Gamma Level', gamma,...
+            'Thresh Method',threshMethod,...
             'Remove Pixel Size',rmPixelSize,...
             'Adaptive Sensitivity',adaptiveSensitivity,...
             'Strel Size',strelSize',...

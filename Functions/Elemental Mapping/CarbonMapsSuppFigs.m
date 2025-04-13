@@ -81,12 +81,12 @@ end
 %% Finding relevant energy indicies
 [~,preidx] = ClosestValue(energy, 278, [277, 283], 'Error Message', 'missing pre-edge energy');
 [~,sp2idx] = ClosestValue(energy, 285.4, [284.5, 285.6], 'Error Message', 'missing sp2 energy');
-[~,carboxidx] = ClosestValue(energy, 288.6, [288, 289], 'Error Message', 'missing carbox energy');
+%[~,carboxidx] = ClosestValue(energy, 288.6, [288, 289], 'Error Message', 'missing carbox energy');
 [~,postidx] = ClosestValue(energy, 320, [310, 330], 'Error Message', 'missing post-edge energy');
 
 pre = stack(:,:,preidx);
 sp2im = stack(:,:,sp2idx);
-carboxim = stack(:,:,carboxidx);
+%carboxim = stack(:,:,carboxidx);
 post = stack(:,:,postidx);
 
 % This background subtraction is a good first step but isn't mature enough as is, plus it takes a long time
@@ -97,7 +97,7 @@ post = stack(:,:,postidx);
 
 pre(pre<0) = 0;
 sp2im(sp2im<0) = 0;
-carboxim(carboxim<0) = 0;
+%carboxim(carboxim<0) = 0;
 post(post<0) = 0;
 
 binmap = Snew.binmap;

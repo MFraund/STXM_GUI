@@ -201,15 +201,16 @@ MassMap.soot = (tsoot .* XSiz .* YSiz) .* sootDens .* (1e3 ./ 1e2)^3 ; % in micr
 %% Integrate volume fractions for individual particles
 volFrac=zeros(max(max(LabelMat)),1);
 MassFrac = zeros(max(max(LabelMat)),1);
+[thickVecOC, thickVecIN, thickVecEC] = deal([]);
 for i=1:max(max(LabelMat)) % loop over particles
     sumOrgThick=nansum(torg(LabelMat==i));
     sumInorgThick=nansum(tinorg(LabelMat==i));
 	sumSootThick = nansum(tsoot(LabelMat==i));
     volFrac(i)=sumOrgThick./(sumOrgThick+sumInorgThick+sumSootThick);
     
-    thickVecOC(i) = sum(torg(LabelMat==i),'omitnan');
-    thickVecIN(i) = sum(tinorg(LabelMat==i),'omitnan');
-    thickVecEC(i) = sum(tsoot(LabelMat==i),'omitnan');
+    thickVecOC(i) = mean(torg(LabelMat==i),'omitnan');
+    thickVecIN(i) = mean(tinorg(LabelMat==i),'omitnan');
+    thickVecEC(i) = mean(tsoot(LabelMat==i),'omitnan');
 	
 	sumOrgMass=nansum(MassMap.org(LabelMat==i));
     sumInorgMass=nansum(MassMap.inorg(LabelMat==i));
