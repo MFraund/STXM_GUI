@@ -137,6 +137,9 @@ inorgPost{11}=(1*207*upb_post+2*14*un_post+6*16*uo_post)/(1*207+2*14+6*16); %% P
 inorgPre{12}=(2*27*ual_pre+2*28*usi_pre+9*16*uo_pre+4*1*uh_pre)/(2*27+2*28+9*16+4*1); %% Al2Si2O9H4
 inorgPost{12}=(2*27*ual_post+2*28*usi_post+9*16*uo_post+4*1*uh_post)/(2*27+2*28+9*16+4*1); %%Al2Si2O9H4
 
+inorgPre{13}=(2*23*una_pre+1*12*uc_pre+3*16*uo_pre)/(2*23+1*12+3*16); %% Na2CO3
+inorgPost{13}=(2*23*una_post+1*12*uc_post+3*16*uo_post)/(2*23+1*12+3*16);
+
 switch inorg
     case 'NaCl'
         uinorgpre=inorgPre{6};
@@ -174,6 +177,9 @@ switch inorg
     case 'Al2Si2O9H4'
         uinorgpre = inorgPre{12};
         uinorgpost = inorgPost{12};
+    case 'Na2CO3'
+        uinorgpre = inorgPre{13};
+        uinorgpost = inorgPost{13};
 end
 
 end

@@ -70,8 +70,8 @@ end
 [uorgpre,uorgpost,uinorgpre,uinorgpost]=PreToPostRatioVolFrac(inorganic,organic); %% get calculated cross sections in cm^2/g
 
 %% Density of common compounds
-inorglist =     {'(NH4)2SO4','NH4NO3','NaNO3','KNO3','Na2SO4','NaCl','KCl','Fe2O3','CaCO3','ZnO','Pb(NO3)2','Al2Si2O9H4'};
-inorgdenslist = {1.77       ,1.72    ,2.26   ,2.11  ,2.66    ,2.16  ,1.98 ,5.24   ,2.71   ,5.61 ,4.53      ,2.60}; % g/cm^3
+inorglist =     {'(NH4)2SO4','NH4NO3','NaNO3','KNO3','Na2SO4','NaCl','KCl','Fe2O3','CaCO3','ZnO','Pb(NO3)2','Al2Si2O9H4', 'Na2CO3'};
+inorgdenslist = {1.77       ,1.72    ,2.26   ,2.11  ,2.66    ,2.16  ,1.98 ,5.24   ,2.71   ,5.61 ,4.53      ,2.60        , 2.54}; % g/cm^3
 
 orglist =       {'adipic','glucose','oxalic','sucrose','tricarboxylic acid','pinonic acid','pinene'};
 orgdenslist =   {1.36    ,1.54     ,1.9     ,1.59	  ,1.7				   ,1.1			  ,0.86}; % g/cm^3

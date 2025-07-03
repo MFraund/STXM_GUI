@@ -145,6 +145,7 @@ S.gamma = gammaLevel;
 %% Determing Binmap
 binmap = tempMask;
 binmap = bwareaopen(binmap, rmPixelSize, 8);
+binmap = imfill(binmap,'holes');
 
 if strcmpi(manualBinmapCheck,'yes') | manualBinmapCheck == 1
     %rawbinmap = tempMask;
